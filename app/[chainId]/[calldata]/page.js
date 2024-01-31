@@ -10,6 +10,7 @@ export default function Page({ params }) {
         <meta property="fc:frame" content="vNext" />
         <meta property="fc:frame:image" content={imageUrl} />
         <meta property="fc:frame:button:1" content="Sign Transaction" />
+        <meta property="fc:frame:post_url" content="https://faristocracy-frame.vercel.app/api/post?slide=1" />
       </head>
       <body>
         <img src={imageUrl} width="800" />
