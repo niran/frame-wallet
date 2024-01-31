@@ -1,4 +1,4 @@
-
+const baseUrl = "https://frame-wallet.vercel.app";
 const imageUrl = "/images/robot-check.png";
 
 export default function Page({ params }) {
@@ -8,7 +8,7 @@ export default function Page({ params }) {
         <meta property="og:title" content="Frame Wallet Transaction" />
         <meta property="og:image" content={imageUrl} />
         <meta property="fc:frame" content="vNext" />
-        <meta property="fc:frame:image" content={imageUrl} />
+        <meta property="fc:frame:image" content={`${baseUrl}${imageUrl}`} />
         <meta property="fc:frame:button:1" content="Sign Transaction" />
         <meta property="fc:frame:post_url" content="https://faristocracy-frame.vercel.app/api/post?slide=1" />
       </head>
