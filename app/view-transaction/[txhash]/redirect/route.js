@@ -4,12 +4,12 @@ import { NextResponse } from 'next/server';
 
 
 export async function POST(req, { params }) {
-  const redirectPath = `/view-transaction/${params.txhash}/redirect`;
+  const transactionUrl = `https://basescan.org/tx/${params.txhash}`;
 
   return new NextResponse(null, {
     status: 302,
     headers: {
-      'Location': redirectPath,
+      'Location': transactionUrl,
     },
   });
 };
