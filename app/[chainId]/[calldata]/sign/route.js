@@ -6,6 +6,8 @@ const imageUrl = "/images/robot-check.png";
 
 export async function POST(req, { params }) {
   const body = await req.json();
+  console.log(JSON.stringify(body));
+  
   const html = `
     <html>
       <head>
