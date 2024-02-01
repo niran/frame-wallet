@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
+import { BASE_URL } from '../../../constants';
 
 
 export async function POST(req, { params }) {
-  const redirectPath = `/view-transaction/${params.txhash}/redirect`;
+  const redirectPath = `${BASE_URL}/view-transaction/${params.txhash}/redirect`;
   try {
     const body = await req.json();
     console.log(JSON.stringify(body));
