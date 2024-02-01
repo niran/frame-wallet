@@ -1,3 +1,6 @@
 [submodule "contracts/lib/forge-std"]
 	path = contracts/lib/forge-std
 	url = https://github.com/foundry-rs/forge-std
+[submodule "contracts/lib/frame-verifier"]
+	path = contracts/lib/frame-verifier
+	url = https://github.com/wilsoncusack/frame-verifier
