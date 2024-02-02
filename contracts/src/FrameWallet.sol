@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
-import {UUPSUpgradeable} from "@openzeppelin/contracts/proxy/utils/UUPSUpgradeable.sol";
+import {UUPSUpgradeable} from "openzeppelin-latest/contracts/proxy/utils/UUPSUpgradeable.sol";
 
 import {BaseAccount} from "account-abstraction/core/BaseAccount.sol";
 import {IEntryPoint} from "account-abstraction/interfaces/IEntryPoint.sol";
+import {UserOperation} from "account-abstraction/interfaces/UserOperation.sol";
 import {TokenCallbackHandler} from "account-abstraction/samples/callback/TokenCallbackHandler.sol";
 
 contract FrameWallet is BaseAccount, TokenCallbackHandler, UUPSUpgradeable {
@@ -41,16 +42,7 @@ contract FrameWallet is BaseAccount, TokenCallbackHandler, UUPSUpgradeable {
         override
         returns (uint256 validationData)
     {
-        address _owner = owner();
-        bytes32 signedHash = userOpHash.toEthSignedMessageHash();
-        bytes memory signature = userOp.signature;
-        (address recovered, ECDSA.RecoverError error) = signedHash.tryRecover(signature);
-        if (
-            (error == ECDSA.RecoverError.NoError && recovered == _owner)
-                || SignatureChecker.isValidERC1271SignatureNow(_owner, userOpHash, signature)
-        ) {
-            return 0;
-        }
+        // TODO: Implement FrameVerifier-based signature checking.
         return SIG_VALIDATION_FAILED;
     }
 
@@ -61,5 +53,9 @@ contract FrameWallet is BaseAccount, TokenCallbackHandler, UUPSUpgradeable {
         if (msg.sender != address(entryPoint())) {
             revert NotAuthorized(msg.sender);
         }
+    }
+
+    function entryPoint() public view virtual override returns (IEntryPoint) {
+        return _ENTRY_POINT;
     }
 }

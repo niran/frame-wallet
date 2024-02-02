@@ -14,7 +14,7 @@ contract FrameWalletTest is Test {
         entryPoint = new EntryPoint();
         // TODO: Use the factory once it exists.
         frameWallet = new FrameWallet(entryPoint);
-        frameWallet.initialize(0x0000000000000000);
+        //frameWallet.initialize(0x0000000000000000);
     }
 
     function test_Noop() public {
