@@ -19,16 +19,16 @@ contract FrameWalletFactoryTest is Test {
     }
 
     function testGetAddress() public {
-        address counterfactual = factory.getAddress(PUBLIC_KEY, 1);
+        address counterfactual = factory.getAddress(PUBLIC_KEY);
         assertEq(counterfactual.codehash, bytes32(0));
-        FrameWallet factual = factory.createAccount(PUBLIC_KEY, 1);
+        FrameWallet factual = factory.createAccount(PUBLIC_KEY);
         assertTrue(address(factual).codehash != bytes32(0));
         assertEq(counterfactual, address(factual));
     }
 
     function testReturnsAddressWhenAccountAlreadyExists() public {
-        FrameWallet account = factory.createAccount(PUBLIC_KEY, 1);
-        FrameWallet otherAccount = factory.createAccount(PUBLIC_KEY, 1);
+        FrameWallet account = factory.createAccount(PUBLIC_KEY);
+        FrameWallet otherAccount = factory.createAccount(PUBLIC_KEY);
         assertEq(address(account), address(otherAccount));
     }
 }

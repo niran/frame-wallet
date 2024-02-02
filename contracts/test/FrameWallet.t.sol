@@ -17,7 +17,7 @@ contract FrameWalletTest is Test {
     function setUp() public {
         entryPoint = new EntryPoint();
         FrameWalletFactory factory = new FrameWalletFactory(entryPoint);
-        frameWallet = factory.createAccount(PUBLIC_KEY, 1);
+        frameWallet = factory.createAccount(PUBLIC_KEY);
     }
 
     function testExecute() public {

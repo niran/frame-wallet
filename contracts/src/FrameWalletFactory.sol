@@ -8,31 +8,33 @@ import {IEntryPoint} from "account-abstraction/interfaces/IEntryPoint.sol";
 
 import {FrameWallet} from "./FrameWallet.sol";
 
+
 contract FrameWalletFactory {
     FrameWallet public immutable accountImplementation;
+    bytes32 public constant HARDCODED_SALT = bytes32(uint256(0x1));
 
     constructor(IEntryPoint _entryPoint) {
         accountImplementation = new FrameWallet(_entryPoint);
     }
 
-    function createAccount(bytes32 pk, uint256 salt) public returns (FrameWallet ret) {
-        address addr = getAddress(pk, salt);
+    function createAccount(bytes32 pk) public returns (FrameWallet ret) {
+        address addr = getAddress(pk);
         uint256 codeSize = addr.code.length;
         if (codeSize > 0) {
             return FrameWallet(payable(addr));
         }
         ret = FrameWallet(
             payable(
-                new ERC1967Proxy{salt: bytes32(salt)}(
+                new ERC1967Proxy{salt: bytes32(HARDCODED_SALT)}(
                     address(accountImplementation), abi.encodeCall(FrameWallet.initialize, (pk))
                 )
             )
         );
     }
 
-    function getAddress(bytes32 pk, uint256 salt) public view returns (address) {
+    function getAddress(bytes32 pk) public view returns (address) {
         return Create2.computeAddress(
-            bytes32(salt),
+            bytes32(HARDCODED_SALT),
             keccak256(
                 abi.encodePacked(
                     type(ERC1967Proxy).creationCode,
