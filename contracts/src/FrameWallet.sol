@@ -23,7 +23,6 @@ contract FrameWallet is BaseAccount, TokenCallbackHandler, UUPSUpgradeable, Init
 
     struct FrameUserOpSignature {
         MessageData md;
-        bytes32 pk;
         bytes ed25519sig;
         uint32 urlOffset;
     }
@@ -52,15 +51,15 @@ contract FrameWallet is BaseAccount, TokenCallbackHandler, UUPSUpgradeable, Init
     {
         // userOp has a signature field intended for implementation-specific data, so we
         // use it to pass more than just the signature. We pass a FrameUserOpSignature that
-        // includes the signed frame payload, the user's public key, and the offset of the
-        // calldata in the URL that we need to verify.
+        // includes the signed frame payload and the prefix of the calldata in the URL that we
+        // need to verify.
         FrameUserOpSignature memory frameSig = abi.decode(userOp.signature, (FrameUserOpSignature));
         bytes memory frameUrl = frameSig.md.frame_action_body.url;
 
         // TODO: Ensure that frameUrl contains the calldata so we know the user signed it.
 
         (bytes32 r, bytes32 s) = abi.decode(frameSig.ed25519sig, (bytes32, bytes32));
-        if (FrameVerifier.verifyMessageData(frameSig.pk, r, s, frameSig.md)) {
+        if (FrameVerifier.verifyMessageData(pk, r, s, frameSig.md)) {
             return 0; // SIG_VALIDATION_SUCCESS
         } else {
             return SIG_VALIDATION_FAILED;
