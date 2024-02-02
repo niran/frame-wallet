@@ -3,6 +3,7 @@ pragma solidity ^0.8.13;
 
 import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import {UUPSUpgradeable} from "openzeppelin-latest/contracts/proxy/utils/UUPSUpgradeable.sol";
+import "@openzeppelin/contracts/utils/Strings.sol";
 
 import {BaseAccount} from "account-abstraction/core/BaseAccount.sol";
 import "account-abstraction/core/Helpers.sol";
@@ -24,7 +25,7 @@ contract FrameWallet is BaseAccount, TokenCallbackHandler, UUPSUpgradeable, Init
     struct FrameUserOpSignature {
         MessageData md;
         bytes ed25519sig;
-        uint32 urlOffset;
+        string urlPrefix;
     }
 
     constructor(IEntryPoint anEntryPoint) {
@@ -54,9 +55,22 @@ contract FrameWallet is BaseAccount, TokenCallbackHandler, UUPSUpgradeable, Init
         // includes the signed frame payload and the prefix of the calldata in the URL that we
         // need to verify.
         FrameUserOpSignature memory frameSig = abi.decode(userOp.signature, (FrameUserOpSignature));
+        
+        // Ensure that frameUrl contains the calldata so we know the user signed it.
+        bytes memory expectedUrl = abi.encodePacked(
+            frameSig.urlPrefix,
+            Strings.toString(block.chainid),
+            ":",
+            toHexString(userOp.callData)
+        );
         bytes memory frameUrl = frameSig.md.frame_action_body.url;
+        if (!Strings.equal(string(frameUrl), string(expectedUrl))) {
+            return SIG_VALIDATION_FAILED;
+        }
 
-        // TODO: Ensure that frameUrl contains the calldata so we know the user signed it.
+        // TODO: Ensure that all values in the UserOp struct are covered by the signature.
+        // We currently only check the sender and calldata. Signing the gas fees and limits
+        // are critical to prevent the account from being drained.
 
         (bytes32 r, bytes32 s) = abi.decode(frameSig.ed25519sig, (bytes32, bytes32));
         if (FrameVerifier.verifyMessageData(pk, r, s, frameSig.md)) {
@@ -64,6 +78,18 @@ contract FrameWallet is BaseAccount, TokenCallbackHandler, UUPSUpgradeable, Init
         } else {
             return SIG_VALIDATION_FAILED;
         }
+    }
+
+    bytes16 private constant HEX_DIGITS = "0123456789abcdef";
+
+    function toHexString(bytes memory value) internal pure returns (string memory) {
+        bytes memory buffer = new bytes(2 * value.length + 2);
+        buffer[0] = "0";
+        buffer[1] = "x";
+        for (uint256 i = 2 * value.length + 1; i > 1; --i) {
+            buffer[i] = HEX_DIGITS[uint8(value[i])];
+        }
+        return string(buffer);
     }
 
     error NotAuthorized(address caller);
