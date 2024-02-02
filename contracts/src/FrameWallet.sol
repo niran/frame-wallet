@@ -5,9 +5,13 @@ import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.s
 import {UUPSUpgradeable} from "openzeppelin-latest/contracts/proxy/utils/UUPSUpgradeable.sol";
 
 import {BaseAccount} from "account-abstraction/core/BaseAccount.sol";
+import "account-abstraction/core/Helpers.sol";
 import {IEntryPoint} from "account-abstraction/interfaces/IEntryPoint.sol";
 import {UserOperation} from "account-abstraction/interfaces/UserOperation.sol";
 import {TokenCallbackHandler} from "account-abstraction/samples/callback/TokenCallbackHandler.sol";
+import {FrameVerifier} from "frame-verifier/FrameVerifier.sol";
+import "frame-verifier/Encoder.sol";
+
 
 contract FrameWallet is BaseAccount, TokenCallbackHandler, UUPSUpgradeable, Initializable {
     IEntryPoint private immutable _ENTRY_POINT;
@@ -16,6 +20,13 @@ contract FrameWallet is BaseAccount, TokenCallbackHandler, UUPSUpgradeable, Init
     // Users with several Farcaster keys will only be able to access a FrameWallet from the single key
     // that was used to create it.
     bytes32 public pk;
+
+    struct FrameUserOpSignature {
+        MessageData md;
+        bytes32 pk;
+        bytes ed25519sig;
+        uint32 urlOffset;
+    }
 
     constructor(IEntryPoint anEntryPoint) {
         _ENTRY_POINT = anEntryPoint;
@@ -39,8 +50,21 @@ contract FrameWallet is BaseAccount, TokenCallbackHandler, UUPSUpgradeable, Init
         override
         returns (uint256 validationData)
     {
-        // TODO: Implement FrameVerifier-based signature checking.
-        return SIG_VALIDATION_FAILED;
+        // userOp has a signature field intended for implementation-specific data, so we
+        // use it to pass more than just the signature. We pass a FrameUserOpSignature that
+        // includes the signed frame payload, the user's public key, and the offset of the
+        // calldata in the URL that we need to verify.
+        FrameUserOpSignature memory frameSig = abi.decode(userOp.signature, (FrameUserOpSignature));
+        bytes memory frameUrl = frameSig.md.frame_action_body.url;
+
+        // TODO: Ensure that frameUrl contains the calldata so we know the user signed it.
+
+        (bytes32 r, bytes32 s) = abi.decode(frameSig.ed25519sig, (bytes32, bytes32));
+        if (FrameVerifier.verifyMessageData(frameSig.pk, r, s, frameSig.md)) {
+            return 0; // SIG_VALIDATION_SUCCESS
+        } else {
+            return SIG_VALIDATION_FAILED;
+        }
     }
 
     error NotAuthorized(address caller);
