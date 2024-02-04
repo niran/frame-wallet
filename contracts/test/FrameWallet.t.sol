@@ -6,6 +6,7 @@ import {EntryPoint} from "account-abstraction/core/EntryPoint.sol";
 import {UserOperation} from "account-abstraction/interfaces/UserOperation.sol";
 import "@openzeppelin/contracts/utils/Base64.sol";
 import "frame-verifier/Encoder.sol";
+import {InflateLib} from "inflate-sol/InflateLib.sol";
 
 import {FrameWallet} from "../src/FrameWallet.sol";
 import {FrameWalletFactory} from "../src/FrameWalletFactory.sol";
@@ -24,6 +25,36 @@ contract FrameWalletTest is Test {
         factory = new FrameWalletFactory(entryPoint);
         initCode = abi.encodePacked(address(factory), abi.encodeCall(factory.createAccount, (PUBLIC_KEY)));
         addressForPublicKey = factory.getAddress(PUBLIC_KEY);
+    }
+
+    function generateCallData() public returns (bytes memory) {
+        bytes memory innerCallData = abi.encodeCall(this.approve, (
+            0x0000000000000000000000000000000000000000,
+            1
+        ));
+        bytes memory outerCallData = abi.encodeCall(this.execute, (
+            0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913, // USDC on Base
+            0,
+            innerCallData
+        ));
+        return outerCallData;
+    }
+
+    function _puff(bytes calldata data, uint destlen) public returns (InflateLib.ErrorCode, bytes memory) {
+        return InflateLib.puff(data, destlen);
+    }
+
+    function testDecompressCallData() public {
+        bytes memory compressedCallData = hex"db26abfe8d0109349b76feb9f676db837e9f1aa32bdfa543f62ed01466a00c24109077e18c5bbe99423b18f1490200";
+        bytes memory expectedCallData = generateCallData();
+        
+        (InflateLib.ErrorCode decompressErrorCode, bytes memory decompressedCallData) = this._puff(
+            compressedCallData, expectedCallData.length);
+        console.log("Error Code: %d", uint(decompressErrorCode));
+        console.log("Decompressed Data:");
+        console.logBytes(decompressedCallData);
+        assertEq(uint(decompressErrorCode), uint(InflateLib.ErrorCode.ERR_NONE));
+        assertEq(decompressedCallData, expectedCallData);
     }
 
     function approve(address spender,uint256 value) external {}
@@ -77,7 +108,7 @@ contract FrameWalletTest is Test {
             frame_action_body: FrameActionBody({
                 url: "https://frame-wallet.vercel.app/8453:789cdb26abfe8d0109349b76feb9f676db837e9f1aa32bdfa543f62ed01466a00c24109077e18c5bbe99423b18f14902005aea0f49",
                 button_index: 1,
-                cast_id: CastId({fid: 231775, hash: 0x0000000000000000000000000000000000000001})
+                cast_id: CastId({fid: 231775, hash: hex"0000000000000000000000000000000000000001"})
             })
         });
 
@@ -88,12 +119,13 @@ contract FrameWalletTest is Test {
             compressedCallData: hex"789cdb26abfe8d0109349b76feb9f676db837e9f1aa32bdfa543f62ed01466a00c24109077e18c5bbe99423b18f14902005aea0f49"
         });
 
-        // TODO: Goal is to verify that InflateLib is working correctly ASAP
+        bytes memory callData = generateCallData();
+
         UserOperation memory userOp = UserOperation({
             sender: addressForPublicKey,
             nonce: 0,
             initCode: initCode,
-            callData: outerCallData,
+            callData: callData,
             callGasLimit: 0,
             verificationGasLimit: 0,
             preVerificationGas: 0,
@@ -102,8 +134,8 @@ contract FrameWalletTest is Test {
             paymasterAndData: hex"",
             signature: abi.encode(frameSig)
         });
-        console.logBytes(outerCallData);
-        console.log(Base64.encode(outerCallData));
+        console.logBytes(callData);
+        console.log(Base64.encode(callData));
 
         UserOperation[] memory ops = new UserOperation[](1);
         ops[0] = userOp;

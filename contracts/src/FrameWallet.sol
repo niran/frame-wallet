@@ -44,6 +44,10 @@ contract FrameWallet is BaseAccount, TokenCallbackHandler, UUPSUpgradeable, Init
         emit FrameWalletInitialized(_ENTRY_POINT, ownerPk);
     }
 
+    function _puff(bytes calldata data, uint destlen) public returns (InflateLib.ErrorCode, bytes memory) {
+        return InflateLib.puff(data, destlen);
+    }
+
     /*
      * Implement template method of BaseAccount.
      */
@@ -59,7 +63,7 @@ contract FrameWallet is BaseAccount, TokenCallbackHandler, UUPSUpgradeable, Init
         FrameUserOpSignature memory frameSig = abi.decode(userOp.signature, (FrameUserOpSignature));
 
         // Decompress the provided compressed calldata and confirm that it matches what's directly in the userOp.
-        (InflateLib.ErrorCode decompressErrorCode, bytes memory decompressedCallData) = InflateLib.puff(
+        (InflateLib.ErrorCode decompressErrorCode, bytes memory decompressedCallData) = this._puff(
             frameSig.compressedCallData, userOp.callData.length);
         
         if (decompressErrorCode != InflateLib.ErrorCode.ERR_NONE || keccak256(decompressedCallData) != keccak256(userOp.callData)) {
