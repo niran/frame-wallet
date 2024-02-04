@@ -1,9 +1,11 @@
 import zlib
 import sys
-import base64
 
 text = sys.stdin.read()
-data = base64.b64decode(text)
+if text[:2] == '0x':
+    text = text[2:]
+
+data = bytes.fromhex(text)
 decompressed_data = zlib.decompress(data)
 encoded_text = decompressed_data.hex()
 

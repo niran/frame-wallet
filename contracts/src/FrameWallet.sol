@@ -13,6 +13,7 @@ import {UserOperation} from "account-abstraction/interfaces/UserOperation.sol";
 import {TokenCallbackHandler} from "account-abstraction/samples/callback/TokenCallbackHandler.sol";
 import {FrameVerifier} from "frame-verifier/FrameVerifier.sol";
 import "frame-verifier/Encoder.sol";
+import {InflateLib} from "inflate-sol/InflateLib.sol";
 
 
 contract FrameWallet is BaseAccount, TokenCallbackHandler, UUPSUpgradeable, Initializable {
@@ -27,6 +28,7 @@ contract FrameWallet is BaseAccount, TokenCallbackHandler, UUPSUpgradeable, Init
         MessageData md;
         bytes ed25519sig;
         string urlPrefix;
+        bytes compressedCallData;
     }
 
     constructor(IEntryPoint anEntryPoint) {
@@ -53,16 +55,23 @@ contract FrameWallet is BaseAccount, TokenCallbackHandler, UUPSUpgradeable, Init
     {
         // userOp has a signature field intended for implementation-specific data, so we
         // use it to pass more than just the signature. We pass a FrameUserOpSignature that
-        // includes the signed frame payload and the prefix of the calldata in the URL that we
-        // need to verify.
+        // includes the extra data we need to verify.
         FrameUserOpSignature memory frameSig = abi.decode(userOp.signature, (FrameUserOpSignature));
+
+        // Decompress the provided compressed calldata and confirm that it matches what's directly in the userOp.
+        (InflateLib.ErrorCode decompressErrorCode, bytes memory decompressedCallData) = InflateLib.puff(
+            frameSig.compressedCallData, userOp.callData.length);
         
-        // Ensure that frameUrl contains the calldata so we know the user signed it.
+        if (decompressErrorCode != InflateLib.ErrorCode.ERR_NONE || keccak256(decompressedCallData) != keccak256(userOp.callData)) {
+            return SIG_VALIDATION_FAILED;
+        }
+        
+        // Ensure that frameUrl contains the compressed calldata so we know the user signed it.
         bytes memory expectedUrl = abi.encodePacked(
             frameSig.urlPrefix,
             Strings.toString(block.chainid),
             ":",
-            Base64.encode(userOp.callData)
+            toHexString(frameSig.compressedCallData)
         );
         bytes memory frameUrl = frameSig.md.frame_action_body.url;
         if (!Strings.equal(string(frameUrl), string(expectedUrl))) {
@@ -79,6 +88,16 @@ contract FrameWallet is BaseAccount, TokenCallbackHandler, UUPSUpgradeable, Init
         } else {
             return SIG_VALIDATION_FAILED;
         }
+    }
+
+    bytes16 private constant HEX_DIGITS = "0123456789abcdef";
+
+    function toHexString(bytes memory value) internal pure returns (string memory) {
+        bytes memory buffer = new bytes(2 * value.length);
+        for (uint256 i = 2 * value.length + 1; i > 1; --i) {
+            buffer[i] = HEX_DIGITS[uint8(value[i])];
+        }
+        return string(buffer);
     }
 
     /**
