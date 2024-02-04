@@ -72,17 +72,17 @@ contract FrameWalletTest is Test {
         ));
 
         /*
-        "trustedData":{"messageBytes":"0ac101080d10df920e18afc9c22e20018201b0010a8f0168747470733a2f2f6672616d652d77616c6c65742e76657263656c2e6170702f383435333a3738396364623236616266653864303130393334396237366665623966363736646238333765396631616133326264666135343366363265643031343636613030633234313039303737653138633562626539393432336231386631343930323030356165613066343910011a1a08df920e121400000000000000000000000000000000000000011214f0dcc3983c1e6c5adc3d5281c12dee3e0d0e860d18012240ed75d516b6bc74e71804b153fede88800e70c0828a567589b790854e4f4df8663c1b7bb454f5fa44486259d0f10e9dc8ce67834fb263c8a78fb17be51950420d2801322031351506585341467af8e18295bbd3eea2d5ea942edaf612f915f8e9cf639419"}
+        "trustedData":{"messageBytes":"0ab501080d10df920e18a485c32e20018201a4010a830168747470733a2f2f6672616d652d77616c6c65742e76657263656c2e6170702f383435333a6462323661626665386430313039333439623736666562396636373664623833376539663161613332626466613534336636326564303134363661303063323431303930373765313863356262653939343233623138663134393032303010011a1a08df920e12140000000000000000000000000000000000000001121483cfd44f550800b9e25383dd28847c726daf4e051801224061528811bca6c6d9537929b512c79f630c1fd27d30f9cf41af63e4a993f4b448c11e75e9785e91cdf71de6a90d4da1d197a3137fc9f820f1f7a0cd5b617af1082801322031351506585341467af8e18295bbd3eea2d5ea942edaf612f915f8e9cf639419"}
         {
             "valid": true,
             "message": {
                 "data": {
                 "type": "MESSAGE_TYPE_FRAME_ACTION",
                 "fid": 231775,
-                "timestamp": 97559727,
+                "timestamp": 97567396,
                 "network": "FARCASTER_NETWORK_MAINNET",
                 "frameActionBody": {
-                    "url": "aHR0cHM6Ly9mcmFtZS13YWxsZXQudmVyY2VsLmFwcC84NDUzOjc4OWNkYjI2YWJmZThkMDEwOTM0OWI3NmZlYjlmNjc2ZGI4MzdlOWYxYWEzMmJkZmE1NDNmNjJlZDAxNDY2YTAwYzI0MTA5MDc3ZTE4YzViYmU5OTQyM2IxOGYxNDkwMjAwNWFlYTBmNDk=",
+                    "url": "aHR0cHM6Ly9mcmFtZS13YWxsZXQudmVyY2VsLmFwcC84NDUzOmRiMjZhYmZlOGQwMTA5MzQ5Yjc2ZmViOWY2NzZkYjgzN2U5ZjFhYTMyYmRmYTU0M2Y2MmVkMDE0NjZhMDBjMjQxMDkwNzdlMThjNWJiZTk5NDIzYjE4ZjE0OTAyMDA=",
                     "buttonIndex": 1,
                     "castId": {
                     "fid": 231775,
@@ -91,22 +91,22 @@ contract FrameWalletTest is Test {
                     "inputText": ""
                 }
                 },
-                "hash": "0xf0dcc3983c1e6c5adc3d5281c12dee3e0d0e860d",
+                "hash": "0x83cfd44f550800b9e25383dd28847c726daf4e05",
                 "hashScheme": "HASH_SCHEME_BLAKE3",
-                "signature": "7XXVFra8dOcYBLFT/t6IgA5wwIKKVnWJt5CFTk9N+GY8G3u0VPX6REhiWdDxDp3IzmeDT7JjyKePsXvlGVBCDQ==",
+                "signature": "YVKIEbymxtlTeSm1EsefYwwf0n0w+c9Br2PkqZP0tEjBHnXpeF6Rzfcd5qkNTaHRl6MTf8n4IPH3oM1bYXrxCA==",
                 "signatureScheme": "SIGNATURE_SCHEME_ED25519",
                 "signer": "0x31351506585341467af8e18295bbd3eea2d5ea942edaf612f915f8e9cf639419"
             }
-            }
+        }
         */
 
         MessageData memory md = MessageData({
             type_: MessageType.MESSAGE_TYPE_FRAME_ACTION,
             fid: 231775,
-            timestamp: 97559727,
+            timestamp: 97567396,
             network: FarcasterNetwork.FARCASTER_NETWORK_MAINNET,
             frame_action_body: FrameActionBody({
-                url: "https://frame-wallet.vercel.app/8453:789cdb26abfe8d0109349b76feb9f676db837e9f1aa32bdfa543f62ed01466a00c24109077e18c5bbe99423b18f14902005aea0f49",
+                url: "https://frame-wallet.vercel.app/8453:db26abfe8d0109349b76feb9f676db837e9f1aa32bdfa543f62ed01466a00c24109077e18c5bbe99423b18f1490200",
                 button_index: 1,
                 cast_id: CastId({fid: 231775, hash: hex"0000000000000000000000000000000000000001"})
             })
@@ -114,9 +114,9 @@ contract FrameWalletTest is Test {
 
         FrameWallet.FrameUserOpSignature memory frameSig = FrameWallet.FrameUserOpSignature({
             md: md,
-            ed25519sig: hex"ed75d516b6bc74e71804b153fede88800e70c0828a567589b790854e4f4df8663c1b7bb454f5fa44486259d0f10e9dc8ce67834fb263c8a78fb17be51950420d",
+            ed25519sig: hex"61528811bca6c6d9537929b512c79f630c1fd27d30f9cf41af63e4a993f4b448c11e75e9785e91cdf71de6a90d4da1d197a3137fc9f820f1f7a0cd5b617af108",
             urlPrefix: "https://frame-wallet.vercel.app/",
-            compressedCallData: hex"789cdb26abfe8d0109349b76feb9f676db837e9f1aa32bdfa543f62ed01466a00c24109077e18c5bbe99423b18f14902005aea0f49"
+            compressedCallData: hex"db26abfe8d0109349b76feb9f676db837e9f1aa32bdfa543f62ed01466a00c24109077e18c5bbe99423b18f1490200"
         });
 
         bytes memory callData = generateCallData();
