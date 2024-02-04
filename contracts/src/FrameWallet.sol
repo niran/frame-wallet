@@ -3,6 +3,7 @@ pragma solidity ^0.8.13;
 
 import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import {UUPSUpgradeable} from "openzeppelin-latest/contracts/proxy/utils/UUPSUpgradeable.sol";
+import "@openzeppelin/contracts/utils/Base64.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
 import {BaseAccount} from "account-abstraction/core/BaseAccount.sol";
@@ -61,7 +62,7 @@ contract FrameWallet is BaseAccount, TokenCallbackHandler, UUPSUpgradeable, Init
             frameSig.urlPrefix,
             Strings.toString(block.chainid),
             ":",
-            toHexString(userOp.callData)
+            Base64.encode(userOp.callData)
         );
         bytes memory frameUrl = frameSig.md.frame_action_body.url;
         if (!Strings.equal(string(frameUrl), string(expectedUrl))) {
@@ -78,18 +79,6 @@ contract FrameWallet is BaseAccount, TokenCallbackHandler, UUPSUpgradeable, Init
         } else {
             return SIG_VALIDATION_FAILED;
         }
-    }
-
-    bytes16 private constant HEX_DIGITS = "0123456789abcdef";
-
-    function toHexString(bytes memory value) internal pure returns (string memory) {
-        bytes memory buffer = new bytes(2 * value.length + 2);
-        buffer[0] = "0";
-        buffer[1] = "x";
-        for (uint256 i = 2 * value.length + 1; i > 1; --i) {
-            buffer[i] = HEX_DIGITS[uint8(value[i])];
-        }
-        return string(buffer);
     }
 
     /**
