@@ -12,7 +12,7 @@ export default function Page({ params }) {
         <meta property="fc:frame" content="vNext" />
         <meta property="fc:frame:image" content={`${BASE_URL}${imageUrl}`} />
         <meta property="fc:frame:button:1" content="Sign Transaction" />
-        <meta property="fc:frame:post_url" content={`${BASE_URL}/${chainId}/${calldata}/sign`} />
+        <meta property="fc:frame:post_url" content={`${BASE_URL}/${chainId}:${calldata}/sign`} />
       </head>
       <body>
         <img src={imageUrl} width="800" />
