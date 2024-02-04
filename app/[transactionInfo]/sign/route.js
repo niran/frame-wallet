@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
-import { BASE_URL } from "../../../../constants";
+import { BASE_URL } from "../../../constants";
 
 const imageUrl = "/images/robot-check.png";
 
 
 export async function POST(req, { params }) {
+  const [chainId, calldata, ] = decodeURIComponent(params.transactionInfo).split(':');
   let body;
   try {
     body = await req.json();
@@ -27,11 +28,11 @@ export async function POST(req, { params }) {
         <table>
           <tr>
             <td>Chain ID</td>
-            <td>${params.chainId}</td>
+            <td>${chainId}</td>
           </tr>
           <tr>
             <td>Calldata</td>
-            <td>${params.calldata}</td>
+            <td>${calldata}</td>
           </tr>
           <tr>
             <td>POST body</td>
