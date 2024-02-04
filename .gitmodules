@@ -13,3 +13,6 @@
 [submodule "contracts/lib/openzeppelin-latest"]
 	path = contracts/lib/openzeppelin-latest
 	url = https://github.com/OpenZeppelin/openzeppelin-contracts
+[submodule "contracts/lib/inflate-sol"]
+	path = contracts/lib/inflate-sol
+	url = https://github.com/adlerjohn/inflate-sol
