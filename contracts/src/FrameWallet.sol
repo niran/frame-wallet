@@ -57,6 +57,12 @@ contract FrameWallet is BaseAccount, TokenCallbackHandler, UUPSUpgradeable, Init
         override
         returns (uint256 validationData)
     {
+        // NOTE: Per EIP 4337, accounts MUST validate that the signature is a valid signature
+        // of userOpHash, which includes the userOp, entryPoint, and chainId in the payload.
+        // However, the userOp's calldata alone is too large to fit inside Farcaster's 256
+        // character limit for URLs, so we deviate from the standard to sign less data
+        // (which is insecure) and to compress the data before signing it.
+
         // userOp has a signature field intended for implementation-specific data, so we
         // use it to pass more than just the signature. We pass a FrameUserOpSignature that
         // includes the extra data we need to verify.
@@ -156,5 +162,16 @@ contract FrameWallet is BaseAccount, TokenCallbackHandler, UUPSUpgradeable, Init
 
     function entryPoint() public view virtual override returns (IEntryPoint) {
         return _ENTRY_POINT;
+    }
+
+    /**
+     * Require a sequential nonce.
+     *
+     * The entry point enforces that the lower 64 bits of the nonce are sequential for
+     * any given "key," the upper 192 bits of the nonce. Rejecting any nonces that use
+     * any of the upper 192 bits is required to enforce sequential nonces.
+     */
+    function _validateNonce(uint256 nonce) override internal view virtual {
+        require(nonce < type(uint64).max);
     }
 }
