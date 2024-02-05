@@ -18,6 +18,7 @@ import {InflateLib} from "inflate-sol/InflateLib.sol";
 
 contract FrameWallet is BaseAccount, TokenCallbackHandler, UUPSUpgradeable, Initializable {
     IEntryPoint private immutable _ENTRY_POINT;
+    string public constant URL_PREFIX = "https://frame-wallet.vercel.app/";
 
     // We identify Farcaster users by the Ed25519 public key they used to sign a FrameAction.
     // Users with several Farcaster keys will only be able to access a FrameWallet from the single key
@@ -27,7 +28,6 @@ contract FrameWallet is BaseAccount, TokenCallbackHandler, UUPSUpgradeable, Init
     struct FrameUserOpSignature {
         MessageData md;
         bytes ed25519sig;
-        string urlPrefix;
         bytes compressedCallData;
     }
 
@@ -79,7 +79,7 @@ contract FrameWallet is BaseAccount, TokenCallbackHandler, UUPSUpgradeable, Init
         
         // Ensure that frameUrl contains the compressed calldata so we know the user signed it.
         bytes memory expectedUrl = abi.encodePacked(
-            frameSig.urlPrefix,
+            URL_PREFIX,
             Strings.toString(block.chainid),
             ":",
             toHexString(frameSig.compressedCallData)

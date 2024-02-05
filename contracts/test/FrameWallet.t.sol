@@ -24,8 +24,8 @@ contract FrameWalletTest is Test {
     function setUp() public {
         entryPoint = new EntryPoint();
         factory = new FrameWalletFactory(entryPoint);
-        initCode = abi.encodePacked(address(factory), abi.encodeCall(factory.createAccount, (PUBLIC_KEY)));
-        addressForPublicKey = factory.getAddress(PUBLIC_KEY);
+        initCode = abi.encodePacked(address(factory), abi.encodeCall(factory.createAccount, (PUBLIC_KEY, 1)));
+        addressForPublicKey = factory.getAddress(PUBLIC_KEY, 1);
         vm.deal(addressForPublicKey, 1 ether);
     }
 
@@ -117,7 +117,6 @@ contract FrameWalletTest is Test {
         FrameWallet.FrameUserOpSignature memory frameSig = FrameWallet.FrameUserOpSignature({
             md: md,
             ed25519sig: hex"bea141fd4135311902d34d0154dbad8b8d47c292b1e5895db76e671b7e8d7945442a49849061b2e2a2f63a8964fbd95b36dc26ce3bcd9d62b27b0b3392faa80e",
-            urlPrefix: "https://frame-wallet.vercel.app/",
             compressedCallData: hex"db26abfe8d0109349b76feb9f676db837e9f1aa32bdfa543f62ed01466a00c24109077e18c5bbe199f827b6bf7bd276006233e4900"
         });
 
@@ -149,7 +148,7 @@ contract FrameWalletTest is Test {
     }
 
     function testHandleUserOpForDeployedWallet() public {
-        FrameWallet frameWallet = factory.createAccount(PUBLIC_KEY);
+        FrameWallet frameWallet = factory.createAccount(PUBLIC_KEY, 0);
         assert(false);
     }
 }
