@@ -104,8 +104,11 @@ contract FrameWallet is BaseAccount, TokenCallbackHandler, UUPSUpgradeable, Init
 
     function toHexString(bytes memory value) internal pure returns (string memory) {
         bytes memory buffer = new bytes(2 * value.length);
-        for (uint256 i = 2 * value.length + 1; i > 1; --i) {
-            buffer[i] = HEX_DIGITS[uint8(value[i])];
+        for (uint256 byteIndex = 0; byteIndex < value.length; byteIndex++) {
+            uint256 hexIndex = byteIndex * 2;
+            buffer[hexIndex] = HEX_DIGITS[uint8(value[byteIndex]) >> 4];
+            hexIndex++;
+            buffer[hexIndex] = HEX_DIGITS[uint8(value[byteIndex]) & 0xf];
         }
         return string(buffer);
     }
