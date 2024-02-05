@@ -17,7 +17,14 @@ const provider = new ethers.JsonRpcProvider(RPC_URL);
 
 export async function REQUEST(req, { params }) {
   const walletSalt = req.nextUrl.searchParams.get('s');
-  if (req.method === 'GET') {
+
+  const client = getSSLHubRpcClient(HUB_URL);
+  let frameSignaturePacket;
+  try {
+    frameSignaturePacket = await req.json();
+  } catch (e) {}
+
+  if (!frameSignaturePacket || !frameSignaturePacket.trustedData) {
     // We don't have a signature from the user, so respond with a frame with a
     // Prepare Transaction button that posts to this route.
     const html = `
@@ -53,8 +60,6 @@ export async function REQUEST(req, { params }) {
   }
 
   // Validate the frame signature packet.
-  const client = getSSLHubRpcClient(HUB_URL);
-  const frameSignaturePacket = await req.json();
   const frameMessage = frameSignaturePacket.trustedData.messageBytes;
   const result = await client.validateMessage(Message.decode(Uint8Array.from(Buffer.from(frameMessage, 'hex'))));
   if (!(result.isOk() && result.value.valid)) {
