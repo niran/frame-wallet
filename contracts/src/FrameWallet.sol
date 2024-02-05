@@ -61,7 +61,8 @@ contract FrameWallet is BaseAccount, TokenCallbackHandler, UUPSUpgradeable, Init
         // of userOpHash, which includes the userOp, entryPoint, and chainId in the payload.
         // However, the userOp's calldata alone is too large to fit inside Farcaster's 256
         // character limit for URLs, so we deviate from the standard to sign less data
-        // (which is insecure) and to compress the data before signing it.
+        // (which is insecure against replay and gas draining attacts) and to compress
+        // the data before signing it.
 
         // userOp has a signature field intended for implementation-specific data, so we
         // use it to pass more than just the signature. We pass a FrameUserOpSignature that
@@ -87,10 +88,6 @@ contract FrameWallet is BaseAccount, TokenCallbackHandler, UUPSUpgradeable, Init
         if (!Strings.equal(string(frameUrl), string(expectedUrl))) {
             return SIG_VALIDATION_FAILED;
         }
-
-        // TODO: Ensure that all values in the UserOp struct are covered by the signature.
-        // We currently only check the sender and calldata. Signing the gas fees and limits
-        // are critical to prevent the account from being drained.
 
         (bytes32 r, bytes32 s) = abi.decode(frameSig.ed25519sig, (bytes32, bytes32));
         if (FrameVerifier.verifyMessageData(pk, r, s, frameSig.md)) {
