@@ -58,6 +58,7 @@ export async function REQUEST(req, { params }) {
   // clicked, sends a Farcaster message to the user with this URL.
 
   // Validate the frame signature packet.
+  console.log(frameSignaturePacket);
   const frameMessage = frameSignaturePacket.trustedData.messageBytes;
   const result = await client.validateMessage(Message.decode(Uint8Array.from(Buffer.from(frameMessage, 'hex'))));
   if (!(result.isOk() && result.value.valid)) {
@@ -69,7 +70,6 @@ export async function REQUEST(req, { params }) {
     });
   }
   const validationMessage = result.value.message;
-  console.log(validationMessage);
 
   const walletInfo = await getWalletInfoForPublicKey(validationMessage.signer, walletSalt);
 
