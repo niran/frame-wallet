@@ -4,15 +4,8 @@ import { NextResponse } from "next/server";
 import { getSSLHubRpcClient, Message } from '@farcaster/hub-nodejs';
 import { ethers } from "ethers";
 import * as contracts from "../../../../contracts";
-import { BASE_URL } from "../../../../constants";
+import { BASE_URL, DEFAULT_WALLET_SALT, CHAIN_ID, HUB_URL, RPC_URL, IMAGE_URL } from "../../../../constants";
 
-const IMAGE_URL = "/images/robot-check.png";
-
-// TODO: Change DEFAULT_WALLET_SALT to 0 before launch.
-const DEFAULT_WALLET_SALT = 1;
-const CHAIN_ID = 8453;
-const HUB_URL = process.env['HUB_URL'] || "nemes.farcaster.xyz:2283";
-const RPC_URL = "https://mainnet.base.org";
 const provider = new ethers.JsonRpcProvider(RPC_URL);
 
 export async function REQUEST(req, { params }) {
