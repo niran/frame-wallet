@@ -1,8 +1,6 @@
-import { promisify } from "util";
-import { deflateRaw, inflateRaw } from "zlib";
 import { NextResponse } from "next/server";
-import { ethers } from "ethers";
-import { BASE_URL, CHAIN_ID, RPC_URL, IMAGE_URL } from "../../../../constants";
+import { getSSLHubRpcClient, Message } from '@farcaster/hub-nodejs';
+import { BASE_URL, HUB_URL, IMAGE_URL } from "../../../constants";
 
 export async function REQUEST(req, { params }) {
   const walletSalt = req.nextUrl.searchParams.get('s');
