@@ -1,8 +1,5 @@
 import { NextResponse } from "next/server";
-import { BASE_URL } from "../../../../constants";
-
-const IMAGE_URL = "/images/robot-check.png";
-
+import { BASE_URL, IMAGE_URL } from "../../../../constants";
 
 export async function POST(req, { params }) {
   let body;

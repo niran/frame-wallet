@@ -1,14 +1,14 @@
 import { promisify } from "util";
-import { deflateRaw, inflateRaw } from "zlib";
+import { inflateRaw } from "zlib";
 import { NextResponse } from "next/server";
-import { getSSLHubRpcClient, Message } from '@farcaster/hub-nodejs';
+import { getSSLHubRpcClient, Message, MessageData } from '@farcaster/hub-nodejs';
 import { ethers } from "ethers";
-import * as contracts from "../../../../contracts";
-import { BASE_URL, DEFAULT_WALLET_SALT, CHAIN_ID, HUB_URL, RPC_URL, IMAGE_URL } from "../../../../constants";
+import axios from "axios";
+import { BASE_URL, DEFAULT_WALLET_SALT, HUB_URL, RPC_URL, IMAGE_URL, ENTRY_POINT_ADDRESS } from "../../../constants";
+import * as contracts from "../../../contracts";
 import { getWalletInfoForPublicKey } from "../wallet";
 import { redirectToViewWallet } from "../responses";
 
-const provider = new ethers.JsonRpcProvider(RPC_URL);
 
 export async function REQUEST(req, { params }) {
   const walletSalt = req.nextUrl.searchParams.get('s');
@@ -20,8 +20,7 @@ export async function REQUEST(req, { params }) {
   } catch (e) {}
 
   if (!frameSignaturePacket || !frameSignaturePacket.trustedData) {
-    // We don't have a signature from the user, so respond with a frame with a
-    // Prepare Transaction button that posts to this route.
+    // We don't have a signature from the user, so prompt them to sign.
     const html = `
       <html>
         <head>
@@ -29,17 +28,17 @@ export async function REQUEST(req, { params }) {
           <meta property="og:image" content="${IMAGE_URL}" />
           <meta property="fc:frame" content="vNext" />
           <meta property="fc:frame:image" content="${BASE_URL}${IMAGE_URL}" />
-          <meta property="fc:frame:button:1" content="Prepare Transaction" />
+          <meta property="fc:frame:button:1" content="Sign Transaction" />
           <meta property="fc:frame:button:2" content="View My Frame Wallet" />
           <meta property="fc:frame:button:2:action" content="post_redirect" />
-          <meta property="fc:frame:post_url" content="${BASE_URL}/v1/p/${params.compressedCallData}${walletSalt ? ('?s=' + walletSalt) : ''}" />
+          <meta property="fc:frame:post_url" content="${BASE_URL}/v1/${params.compressedPartialUserOp}${walletSalt ? ('?s=' + walletSalt) : ''}" />
         </head>
         <body>
           <img src="${IMAGE_URL}" width="800" />
           <table>
             <tr>
-              <td>Compressed Call Data</td>
-              <td>${params.compressedCallData}</td>
+              <td>Compressed Partial UserOp</td>
+              <td>${params.compressedPartialUserOp}</td>
             </tr>
           </table>
         </body>
@@ -54,6 +53,10 @@ export async function REQUEST(req, { params }) {
     });
   }
 
+  // TODO: Check the URL in the frame signature packet. If it doesn't match the current URL, then a developer
+  // has included our frame in their own frame flow. Present a button that says "Prepare Transaction" that when
+  // clicked, sends a Farcaster message to the user with this URL.
+  
   // Validate the frame signature packet.
   const frameMessage = frameSignaturePacket.trustedData.messageBytes;
   const result = await client.validateMessage(Message.decode(Uint8Array.from(Buffer.from(frameMessage, 'hex'))));
@@ -70,51 +73,72 @@ export async function REQUEST(req, { params }) {
   const walletInfo = await getWalletInfoForPublicKey(validationMessage.signer);
 
   if (validationMessage.data.frameActionBody.buttonIndex === 1) {
-    // ABI encode the chainid, calldata, nonce and gas info.
-    const callData = await promisify(inflateRaw)(Buffer.from(params.compressedCallData, 'hex'));
-    const feeData = await provider.getFeeData();
+    // Construct the signature field of the userOp.
+    const compressedPartialUserOpBytes = Buffer.from(params.compressedPartialUserOp, 'hex');
+    const mdBytes = MessageData.encode(validationMessage.data).finish();
+    const ed25519SigBytes = validationMessage.signature;
+    const signature = ethers.concat([mdBytes, ed25519SigBytes, compressedPartialUserOpBytes]);
+    
+    // Construct the wallet init code.
+    const FrameWalletFactoryInterface = ethers.Interface.from(contracts.FrameWalletFactory.abi);
+    const initCode = FrameWalletFactoryInterface.encodeFunctionData(
+      'createAccount', [ethers.hexlify(validationMessage.signer), walletSalt ? walletSalt : DEFAULT_WALLET_SALT]);
+   
+    // Assemble the fields into an eth_sendUserOperation call.
     const abiCoder = ethers.AbiCoder.defaultAbiCoder();
-    // TODO: Change callGasLimit from 1000000 to a value derived from simulating the userOp.
-    const callGasLimit = 1000000;
-    const verificationGasLimit = 10000000;
-    const preVerificationGas = 25000; // See also: https://www.stackup.sh/blog/an-analysis-of-preverificationgas
-    const partialUserOp = abiCoder.encode(
-      ['uint256', 'bytes', 'uint256', 'uint256', 'uint256', 'uint256', 'uint256', 'uint256'],
-      [CHAIN_ID, callData, walletInfo.nonce, callGasLimit, verificationGasLimit, preVerificationGas, feeData.maxFeePerGas, feeData.maxPriorityFeePerGas]
+    const partialUserOp = await promisify(inflateRaw)(compressedPartialUserOpBytes);
+    const userOpComponents = abiCoder.decode(
+      // [CHAIN_ID, callData, callGasLimit, verificationGasLimit, preVerificationGas, feeData.maxFeePerGas, feeData.maxPriorityFeePerGas]
+      ['uint256', 'bytes', 'uint256', 'uint256', 'uint256', 'uint256', 'uint256'],
+      partialUserOp
     );
 
-    // Compress the ABI encoded partial user op.
-    const compressedPartialUserOpBuffer = await promisify(deflateRaw)(ethers.getBytes(partialUserOp));
-    const compressedPartialUserOp = compressedPartialUserOpBuffer.toString('hex');
+    const options = {
+      method: "POST",
+      url: RPC_URL,
+      headers: {
+        accept: "application/json",
+        "content-type": "application/json",
+      },
+      data: {
+        jsonrpc: "2.0",
+        id: 1,
+        method: "eth_sendUserOperation",
+        params: [
+          {
+            sender: walletInfo.address,
+            nonce: walletInfo.nonce,
+            initCode: initCode,
+            callData: userOpComponents[1],
+            callGasLimit: ethers.toBeHex(userOpComponents[2]),
+            verificationGasLimit: ethers.toBeHex(userOpComponents[3]),
+            preVerificationGas: ethers.toBeHex(userOpComponents[4]),
+            maxFeePerGas: ethers.toBeHex(userOpComponents[5]),
+            maxPriorityFeePerGas: ethers.toBeHex(userOpComponents[6]),
+            paymasterAndData: "0x",
+            signature: signature,
+          },
+          ENTRY_POINT_ADDRESS,
+        ],
+      },
+    }; 
     
-    // TODO: Send a farcaster message with the sign URL.
-    const signUrl = `${BASE_URL}/v1/s/${compressedPartialUserOp}${walletSalt ? ('?s=' + walletSalt) : ''}`;
-    console.log(`Sign URL: ${signUrl}`);
-    if (signUrl.length > 256) {
-      console.warn("Frame URL length is longer than 256 (Farcaster maximum)");
-    }
+    const response = await axios.request(options);
+    console.log(`UserOp ${response.data.result} submitted`);
 
     const html = `
       <html>
         <head>
-          <meta property="og:title" content="Frame Wallet Transaction" />
+          <meta property="og:title" content="Frame Wallet Transaction Submitted" />
           <meta property="og:image" content="${IMAGE_URL}" />
           <meta property="fc:frame" content="vNext" />
           <meta property="fc:frame:image" content="${BASE_URL}${IMAGE_URL}" />
-          <meta property="fc:frame:button:1" content="Check Your Notifications" />
-          <meta property="fc:frame:post_url" content="${BASE_URL}/v1/p/${params.compressedCallData}${walletSalt ? ('?s=' + walletSalt) : ''}" />
+          <meta property="fc:frame:button:1" content="View My Frame Wallet" />
+          <meta property="fc:frame:post_url" content="${BASE_URL}/v1/wallet${walletSalt ? ('?s=' + walletSalt) : ''}" />
         </head>
         <body>
           <img src="${IMAGE_URL}" width="800" />
-          <table>
-            <tr>
-              <td>Compressed Call Data</td>
-              <td>${params.compressedCallData}</td>
-            </tr>
-            <tr>
-              <td>Compressed Partial UserOp</td>
-              <td>${compressedPartialUserOp}</td>
-          </table>
+          <h1>Transaction Submitted</h1>
         </body>
       </html>
     `;

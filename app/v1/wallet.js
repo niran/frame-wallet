@@ -1,21 +1,26 @@
+import { ethers } from "ethers";
+import { DEFAULT_WALLET_SALT, RPC_URL } from "../../constants";
+import * as contracts from "../../contracts";
+
+const provider = new ethers.JsonRpcProvider(RPC_URL);
 
 /**
  * Use the public key from the frame signature packet to get the address and nonce
  * for the user from the chain.
- * @param {string} pk 
  */
-export async function getWalletInfoForPublicKey(pk) {
+export async function getWalletInfoForPublicKey(pk, salt) {
   /*
-  const signerHex = validationMessage.signer;
   const FactoryContract = new ethers.Contract(
     contracts.FrameWalletFactory.address,
-    contracts.FrameWalletFactory.abi
+    contracts.FrameWalletFactory.abi,
+    provider
   );
-  const address = await FactoryContract.getAddress(signerHex, walletSalt ? parseInt(walletSalt) : DEFAULT_WALLET_SALT);
+  const address = await FactoryContract.getAddress(pk, salt ? parseInt(salt) : DEFAULT_WALLET_SALT);
   
   const EntryPointContract = new ethers.Contract(
     contracts.EntryPoint.address,
-    contracts.EntryPoint.abi
+    contracts.EntryPoint.abi,
+    provider
   );
   const nonce = await EntryPointContract.getNonce(address, 0);
   */

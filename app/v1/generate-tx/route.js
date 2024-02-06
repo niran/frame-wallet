@@ -1,10 +1,8 @@
 import { promisify } from "util";
 import { deflateRaw, inflateRaw } from "zlib";
 import { NextResponse } from "next/server";
-import { getSSLHubRpcClient, Message } from '@farcaster/hub-nodejs';
 import { ethers } from "ethers";
-import * as contracts from "../../../../contracts";
-import { BASE_URL, DEFAULT_WALLET_SALT, CHAIN_ID, HUB_URL, RPC_URL, IMAGE_URL } from "../../../../constants";
+import { BASE_URL, CHAIN_ID, RPC_URL, IMAGE_URL } from "../../../constants";
 
 const provider = new ethers.JsonRpcProvider(RPC_URL);
 
