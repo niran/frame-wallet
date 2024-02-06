@@ -5,6 +5,8 @@ import { getSSLHubRpcClient, Message } from '@farcaster/hub-nodejs';
 import { ethers } from "ethers";
 import * as contracts from "../../../../contracts";
 import { BASE_URL, DEFAULT_WALLET_SALT, CHAIN_ID, HUB_URL, RPC_URL, IMAGE_URL } from "../../../../constants";
+import { getWalletInfoForPublicKey } from "../wallet";
+import { redirectToViewWallet } from "../responses";
 
 const provider = new ethers.JsonRpcProvider(RPC_URL);
 
@@ -65,25 +67,7 @@ export async function REQUEST(req, { params }) {
   }
   const validationMessage = result.value.message;
 
-  // Use the packet pk to get the address and nonce for the user from the chain.
-
-  /*
-  const signerHex = validationMessage.signer;
-  const FactoryContract = new ethers.Contract(
-    contracts.FrameWalletFactory.address,
-    contracts.FrameWalletFactory.abi
-  );
-  const walletAddress = await FactoryContract.getAddress(signerHex, walletSalt ? parseInt(walletSalt) : DEFAULT_WALLET_SALT);
-  
-  const EntryPointContract = new ethers.Contract(
-    contracts.EntryPoint.address,
-    contracts.EntryPoint.abi
-  );
-  const nonce = await EntryPointContract.getNonce(walletAddress, 0);
-  */
-
-  const walletAddress = "0x0746a969b9b81CFa52086d6FeF709D3489572204";
-  const nonce = 0;
+  const walletInfo = await getWalletInfoForPublicKey(validationMessage.signer);
 
   if (validationMessage.data.frameActionBody.buttonIndex === 1) {
     // ABI encode the chainid, calldata, nonce and gas info.
@@ -96,7 +80,7 @@ export async function REQUEST(req, { params }) {
     const preVerificationGas = 25000; // See also: https://www.stackup.sh/blog/an-analysis-of-preverificationgas
     const partialUserOp = abiCoder.encode(
       ['uint256', 'bytes', 'uint256', 'uint256', 'uint256', 'uint256', 'uint256', 'uint256'],
-      [CHAIN_ID, callData, nonce, callGasLimit, verificationGasLimit, preVerificationGas, feeData.maxFeePerGas, feeData.maxPriorityFeePerGas]
+      [CHAIN_ID, callData, walletInfo.nonce, callGasLimit, verificationGasLimit, preVerificationGas, feeData.maxFeePerGas, feeData.maxPriorityFeePerGas]
     );
 
     // Compress the ABI encoded partial user op.
@@ -142,13 +126,7 @@ export async function REQUEST(req, { params }) {
       },
     });
   } else if (validationMessage.data.frameActionBody.buttonIndex === 2) {
-    // User clicked "View My Frame Wallet."
-    return new NextResponse(null, {
-      status: 302,
-      headers: {
-        'Location': `https://basescan.org/address/${walletAddress}`,
-      },
-    });
+    return redirectToViewWallet(walletInfo.address);
   } else {
     return new NextResponse('Unexpected frame button index', {
       status: 500,
