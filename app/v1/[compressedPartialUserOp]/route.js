@@ -56,7 +56,7 @@ export async function REQUEST(req, { params }) {
   // TODO: Check the URL in the frame signature packet. If it doesn't match the current URL, then a developer
   // has included our frame in their own frame flow. Present a button that says "Prepare Transaction" that when
   // clicked, sends a Farcaster message to the user with this URL.
-  
+
   // Validate the frame signature packet.
   const frameMessage = frameSignaturePacket.trustedData.messageBytes;
   const result = await client.validateMessage(Message.decode(Uint8Array.from(Buffer.from(frameMessage, 'hex'))));
@@ -69,8 +69,9 @@ export async function REQUEST(req, { params }) {
     });
   }
   const validationMessage = result.value.message;
+  console.log(validationMessage);
 
-  const walletInfo = await getWalletInfoForPublicKey(validationMessage.signer);
+  const walletInfo = await getWalletInfoForPublicKey(validationMessage.signer, walletSalt);
 
   if (validationMessage.data.frameActionBody.buttonIndex === 1) {
     // Construct the signature field of the userOp.
