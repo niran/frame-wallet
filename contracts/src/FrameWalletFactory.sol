@@ -25,7 +25,7 @@ contract FrameWalletFactory {
         ret = FrameWallet(
             payable(
                 new ERC1967Proxy{salt: bytes32(salt)}(
-                    address(accountImplementation), abi.encodeCall(FrameWallet.initialize, (pk))
+                    address(accountImplementation), abi.encodeCall(FrameWallet.initialize, (pk, salt))
                 )
             )
         );
@@ -37,7 +37,7 @@ contract FrameWalletFactory {
             keccak256(
                 abi.encodePacked(
                     type(ERC1967Proxy).creationCode,
-                    abi.encode(address(accountImplementation), abi.encodeCall(FrameWallet.initialize, (pk)))
+                    abi.encode(address(accountImplementation), abi.encodeCall(FrameWallet.initialize, (pk, salt)))
                 )
             )
         );
