@@ -22,10 +22,14 @@ contract FrameWallet is BaseAccount, TokenCallbackHandler, UUPSUpgradeable, Init
     IEntryPoint private immutable _ENTRY_POINT;
     string public constant URL_PREFIX = "https://frame-wallet.vercel.app/v1/";
 
-    // We identify Farcaster users by the Ed25519 public key they used to sign a FrameAction.
-    // Users with several Farcaster keys will only be able to access a FrameWallet from the single key
-    // that was used to create it.
-    bytes32 public pk;
+    // Farcaster users are identified by their unique fid.
+    uint64 public fid;
+    
+    // A user's FrameActions can be signed by any key they've granted access to,
+    // but we don't have access to the key registry from here. We tie the FrameWallet
+    // to the signer used for the fid instead of checking the registry. The downside of
+    // this approach is that you can't use the same FrameWallet from different apps.
+    bytes32 public signerPk;
 
     // Typical 4337 wallets sign the entire userOp in their transactions, including the sender
     // address for the transaction. We can't include the sender address in our user-agnostic URLs,
@@ -61,12 +65,13 @@ contract FrameWallet is BaseAccount, TokenCallbackHandler, UUPSUpgradeable, Init
         _disableInitializers();
     }
 
-    event FrameWalletInitialized(IEntryPoint indexed entryPoint, bytes32 indexed pk, uint256 indexed salt);
+    event FrameWalletInitialized(IEntryPoint indexed entryPoint, uint64 indexed fid, bytes32 indexed signerPk, uint256 salt);
 
-    function initialize(bytes32 ownerPk, uint256 walletSalt) public virtual initializer {
-        pk = ownerPk;
+    function initialize(uint64 userFid, bytes32 userSignerPk, uint256 walletSalt) public virtual initializer {
+        fid = userFid;
+        signerPk = userSignerPk;
         salt = walletSalt;
-        emit FrameWalletInitialized(_ENTRY_POINT, ownerPk, walletSalt);
+        emit FrameWalletInitialized(_ENTRY_POINT, userFid, userSignerPk, walletSalt);
     }
 
     function _puff(bytes calldata data, uint destlen) public returns (InflateLib.ErrorCode, bytes memory) {
@@ -93,6 +98,10 @@ contract FrameWallet is BaseAccount, TokenCallbackHandler, UUPSUpgradeable, Init
         // use it to pass more than just the signature. We pass a FrameUserOpSignature that
         // includes the extra data we need to verify.
         FrameUserOpSignature memory frameSig = abi.decode(userOp.signature, (FrameUserOpSignature));
+        if (frameSig.md.fid != fid) {
+            console.log("fid %s does not match this wallet's fid (%s)", frameSig.md.fid, fid);
+            return SIG_VALIDATION_FAILED;
+        }
 
         // Decompress the provided compressed calldata and confirm that it matches what's directly in the userOp.
         (InflateLib.ErrorCode decompressErrorCode, bytes memory partialUserOpBytes) = this._puff(
@@ -149,7 +158,7 @@ contract FrameWallet is BaseAccount, TokenCallbackHandler, UUPSUpgradeable, Init
         console.log("Frame URL contents match expected URL");
 
         (bytes32 r, bytes32 s) = abi.decode(frameSig.ed25519sig, (bytes32, bytes32));
-        if (FrameVerifier.verifyMessageData(pk, r, s, frameSig.md)) {
+        if (FrameVerifier.verifyMessageData(signerPk, r, s, frameSig.md)) {
             return 0; // SIG_VALIDATION_SUCCESS
         } else {
             return SIG_VALIDATION_FAILED;

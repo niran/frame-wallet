@@ -11,6 +11,7 @@ contract FrameWalletFactoryTest is Test {
     FrameWalletFactory public factory;
     EntryPoint public entryPoint;
 
+    uint64 fid = 1;
     bytes32 public constant PUBLIC_KEY = 0x292404752ddd67080bbfe93af4017e51388ebc3c9fb96b8984658155de590b38;
 
     function setUp() public {
@@ -19,16 +20,16 @@ contract FrameWalletFactoryTest is Test {
     }
 
     function testGetAddress() public {
-        address counterfactual = factory.getAddress(PUBLIC_KEY, 0);
+        address counterfactual = factory.getAddress(fid, PUBLIC_KEY, 0);
         assertEq(counterfactual.codehash, bytes32(0));
-        FrameWallet factual = factory.createAccount(PUBLIC_KEY, 0);
+        FrameWallet factual = factory.createAccount(fid, PUBLIC_KEY, 0);
         assertTrue(address(factual).codehash != bytes32(0));
         assertEq(counterfactual, address(factual));
     }
 
     function testReturnsAddressWhenAccountAlreadyExists() public {
-        FrameWallet account = factory.createAccount(PUBLIC_KEY, 0);
-        FrameWallet otherAccount = factory.createAccount(PUBLIC_KEY, 0);
+        FrameWallet account = factory.createAccount(fid, PUBLIC_KEY, 0);
+        FrameWallet otherAccount = factory.createAccount(fid, PUBLIC_KEY, 0);
         assertEq(address(account), address(otherAccount));
     }
 }

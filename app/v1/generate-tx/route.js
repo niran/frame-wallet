@@ -6,7 +6,7 @@ import { BASE_URL, CHAIN_ID, RPC_URL, IMAGE_URL } from "../../../constants";
 
 const provider = new ethers.JsonRpcProvider(RPC_URL);
 
-export async function REQUEST(req, { params }) {
+export async function REQUEST(req) {
   /*
   {
     "untrustedData": {

@@ -23,9 +23,9 @@ contract FrameWalletTest is Test {
         factory = new FrameWalletFactory(entryPoint);
     }
 
-    function _prepareWallet(bytes32 pk, uint256 salt) internal returns (address, bytes memory) {
-        bytes memory initCode = abi.encodePacked(address(factory), abi.encodeCall(factory.createAccount, (pk, salt)));
-        address addressForPublicKey = factory.getAddress(pk, salt);
+    function _prepareWallet(uint64 fid, bytes32 pk, uint256 salt) internal returns (address, bytes memory) {
+        bytes memory initCode = abi.encodePacked(address(factory), abi.encodeCall(factory.createAccount, (fid, pk, salt)));
+        address addressForPublicKey = factory.getAddress(fid, pk, salt);
         vm.deal(addressForPublicKey, 1 ether);
 
         return (addressForPublicKey, initCode);
@@ -60,7 +60,7 @@ contract FrameWalletTest is Test {
     function execute(address x, uint256 y, bytes calldata z) external {}
 
     function testHandleUserOpWithoutDeployedWallet() public {
-        (address addressForPublicKey, bytes memory initCode) = _prepareWallet(PUBLIC_KEY, 0);
+        (address addressForPublicKey, bytes memory initCode) = _prepareWallet(231775, PUBLIC_KEY, 0);
         Token token = Token(0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913); // USDC on Base
         vm.etch(address(token), type(Token).runtimeCode);
         vm.chainId(8453); // Base
@@ -189,8 +189,73 @@ contract FrameWalletTest is Test {
         assertEq(token.allowance(addressForPublicKey, spender), 1);
     }
 
+    function testHandleUserOpFailsWithWrongFid() public {
+        uint64 wrongFid = 4337;
+        (address addressForPublicKey, bytes memory initCode) = _prepareWallet(wrongFid, PUBLIC_KEY, 0);
+        Token token = Token(0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913); // USDC on Base
+        vm.etch(address(token), type(Token).runtimeCode);
+        vm.chainId(8453); // Base
+        address spender = address(0xdeadbeef);
+
+        bytes memory innerCallData = abi.encodeCall(this.approve, (
+            spender,
+            1
+        ));
+        bytes memory callData = abi.encodeCall(this.execute, (
+            address(token),
+            0,
+            innerCallData
+        ));
+
+        MessageData memory md = MessageData({
+            type_: MessageType.MESSAGE_TYPE_FRAME_ACTION,
+            fid: 231775,
+            timestamp: 97894147,
+            network: FarcasterNetwork.FARCASTER_NETWORK_MAINNET,
+            frame_action_body: FrameActionBody({
+                url: "https://frame-wallet.vercel.app/v1/6360c00b14f04b2bb2e2976778805796dfc901affc8c690df88d4f5c81df7c973c8aec676078b24d56fd1bb240b369e79f6b6fb73de8f7a931baf25d3a64ef024d61026610020904e45d38e3966fc6a7e0deda7def0998c148bab3200000",
+                button_index: 1,
+                cast_id: CastId({fid: 231775, hash: hex"0000000000000000000000000000000000000001"})
+            })
+        });
+
+        FrameWallet.FrameUserOpSignature memory frameSig = FrameWallet.FrameUserOpSignature({
+            md: md,
+            ed25519sig: hex"3b5bf9a30ed7c493df3b769e16f9101813d88a201d270618759dfbf18c76524208372e569622f85b77a2c0d6bfaf94262ab35d41aff036f3ad0349237008d40c",
+            compressedPartialUserOp: hex"6360c00b14f04b2bb2e2976778805796dfc901affc8c690df88d4f5c81df7c973c8aec676078b24d56fd1bb240b369e79f6b6fb73de8f7a931baf25d3a64ef024d61026610020904e45d38e3966fc6a7e0deda7def0998c148bab3200000"
+        });
+
+        UserOperation memory userOp = UserOperation({
+            sender: addressForPublicKey,
+            nonce: 0,
+            initCode: initCode,
+            callData: callData,
+            callGasLimit: 1000000,
+            verificationGasLimit: 10000000,
+            preVerificationGas: 25000, // See also: https://www.stackup.sh/blog/an-analysis-of-preverificationgas
+            maxFeePerGas: 1000558,
+            maxPriorityFeePerGas: 1000000,
+            paymasterAndData: hex"",
+            signature: abi.encode(frameSig)
+        });
+        console.log("Sender: %s", addressForPublicKey);
+        console.log("initCode:");
+        console.logBytes(initCode);
+        console.log("callData:");
+        console.logBytes(callData);
+
+        UserOperation[] memory ops = new UserOperation[](1);
+        ops[0] = userOp;
+
+        vm.expectRevert();
+        entryPoint.handleOps(ops, payable(address(0xdeadbeef)));
+
+        console.log("allowance: %d", token.allowance(addressForPublicKey, spender));
+        assertEq(token.allowance(addressForPublicKey, spender), 0);
+    }
+
     function testHandleUserOpWithSalt() public {
-        (address addressForPublicKey, bytes memory initCode) = _prepareWallet(PUBLIC_KEY, 1);
+        (address addressForPublicKey, bytes memory initCode) = _prepareWallet(231775, PUBLIC_KEY, 1);
         Token token = Token(0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913); // USDC on Base
         vm.etch(address(token), type(Token).runtimeCode);
         vm.chainId(8453); // Base
@@ -284,7 +349,7 @@ contract FrameWalletTest is Test {
     }
 
     function testHandleUserOpForDeployedWallet() public {
-        FrameWallet frameWallet = factory.createAccount(PUBLIC_KEY, 0);
+        FrameWallet frameWallet = factory.createAccount(231775, PUBLIC_KEY, 0);
         assert(false);
     }
 }

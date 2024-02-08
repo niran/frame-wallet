@@ -16,8 +16,8 @@ contract FrameWalletFactory {
         accountImplementation = new FrameWallet(_entryPoint);
     }
 
-    function createAccount(bytes32 pk, uint256 salt) public returns (FrameWallet ret) {
-        address addr = getAddress(pk, salt);
+    function createAccount(uint64 fid, bytes32 signerPk, uint256 salt) public returns (FrameWallet ret) {
+        address addr = getAddress(fid, signerPk, salt);
         uint256 codeSize = addr.code.length;
         if (codeSize > 0) {
             return FrameWallet(payable(addr));
@@ -25,19 +25,19 @@ contract FrameWalletFactory {
         ret = FrameWallet(
             payable(
                 new ERC1967Proxy{salt: bytes32(salt)}(
-                    address(accountImplementation), abi.encodeCall(FrameWallet.initialize, (pk, salt))
+                    address(accountImplementation), abi.encodeCall(FrameWallet.initialize, (fid, signerPk, salt))
                 )
             )
         );
     }
 
-    function getAddress(bytes32 pk, uint256 salt) public view returns (address) {
+    function getAddress(uint64 fid, bytes32 signerPk, uint256 salt) public view returns (address) {
         return Create2.computeAddress(
             bytes32(salt),
             keccak256(
                 abi.encodePacked(
                     type(ERC1967Proxy).creationCode,
-                    abi.encode(address(accountImplementation), abi.encodeCall(FrameWallet.initialize, (pk, salt)))
+                    abi.encode(address(accountImplementation), abi.encodeCall(FrameWallet.initialize, (fid, signerPk, salt)))
                 )
             )
         );

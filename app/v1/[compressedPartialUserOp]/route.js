@@ -4,14 +4,15 @@ import { NextResponse } from "next/server";
 import { getSSLHubRpcClient, Message, MessageData } from '@farcaster/hub-nodejs';
 import { ethers } from "ethers";
 import axios from "axios";
-import { BASE_URL, DEFAULT_WALLET_SALT, HUB_URL, RPC_URL, IMAGE_URL, ENTRY_POINT_ADDRESS } from "../../../constants";
+import { BASE_URL, HUB_URL, RPC_URL, IMAGE_URL, ENTRY_POINT_ADDRESS } from "../../../constants";
 import * as contracts from "../../../contracts";
-import { getWalletInfoForPublicKey } from "../wallet";
+import { getWalletInfoForFrameAction } from "../wallet";
 import { redirectToViewWallet } from "../responses";
 
 
 export async function REQUEST(req, { params }) {
-  const walletSalt = req.nextUrl.searchParams.get('s');
+  const saltParam = req.nextUrl.searchParams.get('s');
+  const walletSalt = saltParam ? parseInt(saltParam) : 0;
 
   const client = getSSLHubRpcClient(HUB_URL);
   let frameSignaturePacket;
@@ -71,7 +72,8 @@ export async function REQUEST(req, { params }) {
   }
   const validationMessage = result.value.message;
 
-  const walletInfo = await getWalletInfoForPublicKey(validationMessage.signer, walletSalt);
+  const walletInfo = await getWalletInfoForFrameAction(
+    validationMessage.data.fid, validationMessage.signer, walletSalt);
 
   if (validationMessage.data.frameActionBody.buttonIndex === 1) {
     // Construct the signature field of the userOp.
@@ -83,7 +85,7 @@ export async function REQUEST(req, { params }) {
     // Construct the wallet init code.
     const FrameWalletFactoryInterface = ethers.Interface.from(contracts.FrameWalletFactory.abi);
     const initCode = FrameWalletFactoryInterface.encodeFunctionData(
-      'createAccount', [ethers.hexlify(validationMessage.signer), walletSalt ? walletSalt : DEFAULT_WALLET_SALT]);
+      'createAccount', [validationMessage.data.fid, ethers.hexlify(validationMessage.signer), walletSalt]);
    
     // Assemble the fields into an eth_sendUserOperation call.
     const abiCoder = ethers.AbiCoder.defaultAbiCoder();
