@@ -15,10 +15,12 @@ import {FrameVerifier} from "frame-verifier/FrameVerifier.sol";
 import "frame-verifier/Encoder.sol";
 import {InflateLib} from "inflate-sol/InflateLib.sol";
 
+import {console} from "forge-std/console.sol";
+
 
 contract FrameWallet is BaseAccount, TokenCallbackHandler, UUPSUpgradeable, Initializable {
     IEntryPoint private immutable _ENTRY_POINT;
-    string public constant URL_PREFIX = "https://frame-wallet.vercel.app/";
+    string public constant URL_PREFIX = "https://frame-wallet.vercel.app/v1/";
 
     // We identify Farcaster users by the Ed25519 public key they used to sign a FrameAction.
     // Users with several Farcaster keys will only be able to access a FrameWallet from the single key
@@ -34,7 +36,17 @@ contract FrameWallet is BaseAccount, TokenCallbackHandler, UUPSUpgradeable, Init
     struct FrameUserOpSignature {
         MessageData md;
         bytes ed25519sig;
-        bytes compressedCallData;
+        bytes compressedPartialUserOp;
+    }
+
+    struct PartialUserOp {
+      uint256 chainId;
+      bytes callData;
+      uint256 callGasLimit;
+      uint256 verificationGasLimit;
+      uint256 preVerificationGas;
+      uint256 maxFeePerGas;
+      uint256 maxPriorityFeePerGas;
     }
 
     constructor(IEntryPoint anEntryPoint) {
@@ -76,29 +88,60 @@ contract FrameWallet is BaseAccount, TokenCallbackHandler, UUPSUpgradeable, Init
         FrameUserOpSignature memory frameSig = abi.decode(userOp.signature, (FrameUserOpSignature));
 
         // Decompress the provided compressed calldata and confirm that it matches what's directly in the userOp.
-        (InflateLib.ErrorCode decompressErrorCode, bytes memory decompressedCallData) = this._puff(
-            frameSig.compressedCallData, userOp.callData.length);
+        (InflateLib.ErrorCode decompressErrorCode, bytes memory partialUserOpBytes) = this._puff(
+            frameSig.compressedPartialUserOp,
+            // A PartialUserOp is a tuple with six uint256 items plus the callData. A tuple begins
+            // with a 32-byte word for its offset pointer. The calldata needs two 32-byte words
+            // (one for offset, the other for length) plus its own length.
+            // That should be enough to fit the decompressed data, but an error is thrown without
+            // space for one more 32-byte word.
+            (32) + (32 * 6) + ((32 * 2) + userOp.callData.length) + (32 * 1)
+        );
         
-        if (decompressErrorCode != InflateLib.ErrorCode.ERR_NONE || keccak256(decompressedCallData) != keccak256(userOp.callData)) {
+        if (decompressErrorCode != InflateLib.ErrorCode.ERR_NONE) {
+            console.log("Inflate failed with error code %s", uint256(decompressErrorCode));
             return SIG_VALIDATION_FAILED;
         }
+        console.log("Inflate successful:");
+        console.logBytes(partialUserOpBytes);
+
+        PartialUserOp memory partialUserOp = abi.decode(partialUserOpBytes, (PartialUserOp));
+        console.log("PartialUserOp decoded");
+
+        if (partialUserOp.chainId != block.chainid ||
+            keccak256(partialUserOp.callData) != keccak256(userOp.callData) ||
+            partialUserOp.callGasLimit != userOp.callGasLimit ||
+            partialUserOp.verificationGasLimit != userOp.verificationGasLimit ||
+            partialUserOp.preVerificationGas != userOp.preVerificationGas ||
+            partialUserOp.maxFeePerGas != userOp.maxFeePerGas ||
+            partialUserOp.maxPriorityFeePerGas != userOp.maxPriorityFeePerGas
+        ) {
+            return SIG_VALIDATION_FAILED;
+        }
+        console.log("PartialUserOp matches UserOp");
 
         if (frameSig.md.timestamp <= lastFrameTimestamp) {
             return SIG_VALIDATION_FAILED;
         }
         lastFrameTimestamp = frameSig.md.timestamp;
+        console.log("Timestamp check succeeded");
         
         // Ensure that frameUrl contains the compressed calldata so we know the user signed it.
         bytes memory expectedUrl = abi.encodePacked(
             URL_PREFIX,
-            Strings.toString(block.chainid),
-            ":",
-            toHexString(frameSig.compressedCallData)
+            toHexString(frameSig.compressedPartialUserOp)
         );
         bytes memory frameUrl = frameSig.md.frame_action_body.url;
-        if (!Strings.equal(string(frameUrl), string(expectedUrl))) {
+        if (expectedUrl.length < frameUrl.length && frameUrl[expectedUrl.length] != '?') {
             return SIG_VALIDATION_FAILED;
         }
+        console.log("Frame URL length matches expected URL");
+    
+        bytes memory truncatedFrameUrl = substring(frameUrl, expectedUrl.length);
+        if (!Strings.equal(string(truncatedFrameUrl), string(expectedUrl))) {
+            return SIG_VALIDATION_FAILED;
+        }
+        console.log("Frame URL contents match expected URL");
 
         (bytes32 r, bytes32 s) = abi.decode(frameSig.ed25519sig, (bytes32, bytes32));
         if (FrameVerifier.verifyMessageData(pk, r, s, frameSig.md)) {
@@ -106,6 +149,14 @@ contract FrameWallet is BaseAccount, TokenCallbackHandler, UUPSUpgradeable, Init
         } else {
             return SIG_VALIDATION_FAILED;
         }
+    }
+
+    function substring(bytes memory source, uint256 length) internal returns (bytes memory) {
+        bytes memory destination = new bytes(length);
+        for (uint i = 0; i < length; i++) {
+            destination[i] = source[i];
+        }
+        return destination;
     }
 
     bytes16 private constant HEX_DIGITS = "0123456789abcdef";

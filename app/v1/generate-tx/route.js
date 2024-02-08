@@ -72,12 +72,16 @@ export async function REQUEST(req, { params }) {
   const verificationGasLimit = 10000000;
   const preVerificationGas = 25000; // See also: https://www.stackup.sh/blog/an-analysis-of-preverificationgas
   const partialUserOp = abiCoder.encode(
-    ['uint256', 'bytes', 'uint256', 'uint256', 'uint256', 'uint256', 'uint256'],
-    [CHAIN_ID, callData, callGasLimit, verificationGasLimit, preVerificationGas, feeData.maxFeePerGas, feeData.maxPriorityFeePerGas]
+    ['tuple(uint256, bytes, uint256, uint256, uint256, uint256, uint256)'],
+    [[CHAIN_ID, callData, callGasLimit, verificationGasLimit, preVerificationGas, feeData.maxFeePerGas, feeData.maxPriorityFeePerGas]]
   );
+  console.log(`feeData: ${JSON.stringify(feeData, 0, 2)}`);
+  console.log(`PartialUserOp: ${partialUserOp}`);
+  console.log(`length: ${(partialUserOp.length - 2) / 2} bytes`);
 
   // Compress the ABI encoded partial user op.
-  const compressedPartialUserOpBuffer = await promisify(deflateRaw)(ethers.getBytes(partialUserOp));
+  const partialUserOpBytes = ethers.getBytes(partialUserOp);
+  const compressedPartialUserOpBuffer = await promisify(deflateRaw)(partialUserOpBytes);
   const compressedPartialUserOp = compressedPartialUserOpBuffer.toString('hex');
   
   const signUrl = `${BASE_URL}/v1/${compressedPartialUserOp}`;

@@ -4,7 +4,6 @@ pragma solidity ^0.8.13;
 import {Test, console} from "forge-std/Test.sol";
 import {EntryPoint} from "account-abstraction/core/EntryPoint.sol";
 import {UserOperation} from "account-abstraction/interfaces/UserOperation.sol";
-import "@openzeppelin/contracts/utils/Base64.sol";
 import {ERC20} from "openzeppelin-latest/contracts/token/ERC20/ERC20.sol";
 import "frame-verifier/Encoder.sol";
 import {InflateLib} from "inflate-sol/InflateLib.sol";
@@ -73,18 +72,57 @@ contract FrameWalletTest is Test {
             innerCallData
         ));
 
-        /*
-        "trustedData":{"messageBytes":"0ac101080d10df920e18a186c72e20018201b0010a8f0168747470733a2f2f6672616d652d77616c6c65742e76657263656c2e6170702f383435333a6462323661626665386430313039333439623736666562396636373664623833376539663161613332626466613534336636326564303134363661303063323431303930373765313863356262653139396638323762366266376264323736303036323333653439303010011a1a08df920e1214000000000000000000000000000000000000000112141891922ca27165a9d694a1d7f2769680e73172dc18012240bea141fd4135311902d34d0154dbad8b8d47c292b1e5895db76e671b7e8d7945442a49849061b2e2a2f63a8964fbd95b36dc26ce3bcd9d62b27b0b3392faa80e2801322031351506585341467af8e18295bbd3eea2d5ea942edaf612f915f8e9cf639419"}        {
+        /**
+        Generating the data for this test
+        =================================
+
+        * Run this test as is with `forge test -vv` and log the calldata that it generates for us
+            * Approve 0xdeadbeef to send 1 Wei of USDC on Base
+        * Take the call data to scripts/generate-tx.sh to get a frame URL
+            * Copy the frame URL in the Location header to the FrameActionBody object
+            * Copy the compressed partialUserOp from the URL to FrameUserOpSignature
+            * Get the PartialUserOp from the logs in the console
+                * Only needed for debugging to compare against the decompressed partial user op
+            * Get maxFeePerGas and maxPriorityFeePerGas from the logs in the console
+                and paste them in UserOperation
+            * Double check the static callGasLimit, VerificationGasLimit, and preVerificationGas
+                in the generate-tx codebase
+        * Load the frame in the frame tester and click sign transaction
+        * Get the Frame Signature Packet from the logs in Vercel
+        * Validate the Frame Signature Packet’s trustedData with scripts/validate-frame-action.sh
+        * Paste the response into the comments below
+        * Copy the timestamp to the MessageData object
+        * Base64-decode the signature and paste in the FrameUserOpSignature object's ed25519
+
+
+        partialUserOp:
+        0x0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000210500000000000000000000000000000000000000000000000000000000000000e000000000000000000000000000000000000000000000000000000000000f4240000000000000000000000000000000000000000000000000000000000098968000000000000000000000000000000000000000000000000000000000000061a800000000000000000000000000000000000000000000000000000000000f446e00000000000000000000000000000000000000000000000000000000000f424000000000000000000000000000000000000000000000000000000000000000e4b61d27f6000000000000000000000000833589fcd6edb6e08f4c7c32d4f71b54bda02913000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000000000000000000000000000000000044095ea7b300000000000000000000000000000000000000000000000000000000deadbeef00000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+        
+        0000000000000000000000000000000000000000000000000000000000000020 tuple encoding pointer
+        0000000000000000000000000000000000000000000000000000000000002105 chain id 8453
+        00000000000000000000000000000000000000000000000000000000000000e0 bytes pointer to 224, 7th word
+        00000000000000000000000000000000000000000000000000000000000f4240
+        0000000000000000000000000000000000000000000000000000000000989680
+        00000000000000000000000000000000000000000000000000000000000061a8
+        00000000000000000000000000000000000000000000000000000000000f446e
+        00000000000000000000000000000000000000000000000000000000000f4240
+        00000000000000000000000000000000000000000000000000000000000000e4 calldata length 228
+        b61d27f6000000000000000000000000833589fcd6edb6e08f4c7c32d4f71b54bda02913000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000000000000000000000000000000000044095ea7b300000000000000000000000000000000000000000000000000000000deadbeef00000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+
+        trustedData: {
+            messageBytes: '0a9102080d10df920e1883fed62e2001820180020adf0168747470733a2f2f6672616d652d77616c6c65742e76657263656c2e6170702f76312f363336306330306231346630346232626232653239373637373838303537393664666339303161666663386336393064663838643466356338316466376339373363386165633637363037386232346435366664316262323430623336396537396636623666623733646538663761393331626166323564336136346566303234643631303236363130303230393034653435643338653339363666633661376530646564613764656630393938633134386261623332303030303010011a1a08df920e1214000000000000000000000000000000000000000112141c9e110a2dbfa73281e66edef29b8dfe03d71949180122403b5bf9a30ed7c493df3b769e16f9101813d88a201d270618759dfbf18c76524208372e569622f85b77a2c0d6bfaf94262ab35d41aff036f3ad0349237008d40c2801322031351506585341467af8e18295bbd3eea2d5ea942edaf612f915f8e9cf639419'
+        }
+
         {
             "valid": true,
             "message": {
                 "data": {
                 "type": "MESSAGE_TYPE_FRAME_ACTION",
                 "fid": 231775,
-                "timestamp": 97633057,
+                "timestamp": 97894147,
                 "network": "FARCASTER_NETWORK_MAINNET",
                 "frameActionBody": {
-                    "url": "aHR0cHM6Ly9mcmFtZS13YWxsZXQudmVyY2VsLmFwcC84NDUzOmRiMjZhYmZlOGQwMTA5MzQ5Yjc2ZmViOWY2NzZkYjgzN2U5ZjFhYTMyYmRmYTU0M2Y2MmVkMDE0NjZhMDBjMjQxMDkwNzdlMThjNWJiZTE5OWY4MjdiNmJmN2JkMjc2MDA2MjMzZTQ5MDA=",
+                    "url": "aHR0cHM6Ly9mcmFtZS13YWxsZXQudmVyY2VsLmFwcC92MS82MzYwYzAwYjE0ZjA0YjJiYjJlMjk3Njc3ODgwNTc5NmRmYzkwMWFmZmM4YzY5MGRmODhkNGY1YzgxZGY3Yzk3M2M4YWVjNjc2MDc4YjI0ZDU2ZmQxYmIyNDBiMzY5ZTc5ZjZiNmZiNzNkZThmN2E5MzFiYWYyNWQzYTY0ZWYwMjRkNjEwMjY2MTAwMjA5MDRlNDVkMzhlMzk2NmZjNmE3ZTBkZWRhN2RlZjA5OThjMTQ4YmFiMzIwMDAwMA==",
                     "buttonIndex": 1,
                     "castId": {
                     "fid": 231775,
@@ -93,9 +131,9 @@ contract FrameWalletTest is Test {
                     "inputText": ""
                 }
                 },
-                "hash": "0x1891922ca27165a9d694a1d7f2769680e73172dc",
+                "hash": "0x1c9e110a2dbfa73281e66edef29b8dfe03d71949",
                 "hashScheme": "HASH_SCHEME_BLAKE3",
-                "signature": "vqFB/UE1MRkC000BVNuti41HwpKx5Yldt25nG36NeUVEKkmEkGGy4qL2Oolk+9lbNtwmzjvNnWKyewszkvqoDg==",
+                "signature": "O1v5ow7XxJPfO3aeFvkQGBPYiiAdJwYYdZ378Yx2UkIINy5WliL4W3eiwNa/r5QmKrNdQa/wNvOtA0kjcAjUDA==",
                 "signatureScheme": "SIGNATURE_SCHEME_ED25519",
                 "signer": "0x31351506585341467af8e18295bbd3eea2d5ea942edaf612f915f8e9cf639419"
             }
@@ -105,10 +143,10 @@ contract FrameWalletTest is Test {
         MessageData memory md = MessageData({
             type_: MessageType.MESSAGE_TYPE_FRAME_ACTION,
             fid: 231775,
-            timestamp: 97633057,
+            timestamp: 97894147,
             network: FarcasterNetwork.FARCASTER_NETWORK_MAINNET,
             frame_action_body: FrameActionBody({
-                url: "https://frame-wallet.vercel.app/8453:db26abfe8d0109349b76feb9f676db837e9f1aa32bdfa543f62ed01466a00c24109077e18c5bbe199f827b6bf7bd276006233e4900",
+                url: "https://frame-wallet.vercel.app/v1/6360c00b14f04b2bb2e2976778805796dfc901affc8c690df88d4f5c81df7c973c8aec676078b24d56fd1bb240b369e79f6b6fb73de8f7a931baf25d3a64ef024d61026610020904e45d38e3966fc6a7e0deda7def0998c148bab3200000",
                 button_index: 1,
                 cast_id: CastId({fid: 231775, hash: hex"0000000000000000000000000000000000000001"})
             })
@@ -116,8 +154,8 @@ contract FrameWalletTest is Test {
 
         FrameWallet.FrameUserOpSignature memory frameSig = FrameWallet.FrameUserOpSignature({
             md: md,
-            ed25519sig: hex"bea141fd4135311902d34d0154dbad8b8d47c292b1e5895db76e671b7e8d7945442a49849061b2e2a2f63a8964fbd95b36dc26ce3bcd9d62b27b0b3392faa80e",
-            compressedCallData: hex"db26abfe8d0109349b76feb9f676db837e9f1aa32bdfa543f62ed01466a00c24109077e18c5bbe199f827b6bf7bd276006233e4900"
+            ed25519sig: hex"3b5bf9a30ed7c493df3b769e16f9101813d88a201d270618759dfbf18c76524208372e569622f85b77a2c0d6bfaf94262ab35d41aff036f3ad0349237008d40c",
+            compressedPartialUserOp: hex"6360c00b14f04b2bb2e2976778805796dfc901affc8c690df88d4f5c81df7c973c8aec676078b24d56fd1bb240b369e79f6b6fb73de8f7a931baf25d3a64ef024d61026610020904e45d38e3966fc6a7e0deda7def0998c148bab3200000"
         });
 
         UserOperation memory userOp = UserOperation({
@@ -128,16 +166,16 @@ contract FrameWalletTest is Test {
             callGasLimit: 1000000,
             verificationGasLimit: 10000000,
             preVerificationGas: 25000, // See also: https://www.stackup.sh/blog/an-analysis-of-preverificationgas
-            maxFeePerGas: 1 gwei,
-            maxPriorityFeePerGas: 0.1 gwei,
+            maxFeePerGas: 1000558,
+            maxPriorityFeePerGas: 1000000,
             paymasterAndData: hex"",
             signature: abi.encode(frameSig)
         });
         console.log("Sender: %s", addressForPublicKey);
         console.log("initCode:");
         console.logBytes(initCode);
+        console.log("callData:");
         console.logBytes(callData);
-        console.log(Base64.encode(callData));
 
         UserOperation[] memory ops = new UserOperation[](1);
         ops[0] = userOp;
