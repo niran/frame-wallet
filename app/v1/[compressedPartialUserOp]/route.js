@@ -148,6 +148,15 @@ export async function REQUEST(req, { params }) {
       },
     };
 
+    const params = options.data.params;
+    const encodedUserOp = abiCoder.encode(
+      ['tuple(address,uint256,bytes,bytes,uint256,uint256,uint256,uint256,uint256,bytes,bytes)'],
+      [[params.sender, params.nonce, params.initCode, params.callData, params.callGasLimit,
+        params.verificationGasLimit, params.preVerificationGas, params.maxFeePerGas,
+        params.maxPriorityFeePerGas, params.paymasterAndData, params.signature]]
+    );
+    console.log(`Encoded UserOperation: ${encodedUserOp}`);
+
     console.log(JSON.stringify(options, (key, value) => {
       if((typeof value).toLowerCase() === 'bigint') {
         console.log(`key ${key} is a BigInt`);
