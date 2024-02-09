@@ -149,9 +149,9 @@ export async function REQUEST(req, { params }) {
 
     function logProperties(item, key="root") {
       console.log(`Logging ${key} object...`);
-      for (const property of item.keys()) {
+      for (const property of Object.keys(item)) {
         console.log(`Logging ${key}.${property}...`);
-        if (item[property].keys().length > 0) {
+        if (Object.keys(item[property]).length > 0) {
           return logProperties(item[property], property);
         }
         console.log(`${key}.${property}: ${JSON.stringify(item[property], null, 2)}`);
