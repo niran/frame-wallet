@@ -174,8 +174,11 @@ export async function REQUEST(req, { params }) {
 
       throw error;
     }
+
+    console.log(response.status);
+    console.log(response.headers);
+    console.log(response.data);
     console.log(`UserOp ${response.data.result} submitted`);
-    console.log(`Response: ${JSON.stringify(response, null, 2)}`);
 
     const html = `
       <html>
