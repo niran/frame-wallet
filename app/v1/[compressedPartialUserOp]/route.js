@@ -155,8 +155,9 @@ export async function REQUEST(req, { params }) {
       return value;
     }, 2));
     
+    let response;
     try {
-      const response = await axios.request(options);
+      response = await axios.request(options);
     } catch (error) {
       if (error.response) {
         // The request was made and the server responded with a status code
@@ -174,6 +175,7 @@ export async function REQUEST(req, { params }) {
       throw error;
     }
     console.log(`UserOp ${response.data.result} submitted`);
+    console.log(`Response: ${JSON.stringify(response, null, 2)}`);
 
     const html = `
       <html>
