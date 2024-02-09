@@ -105,8 +105,9 @@ export async function REQUEST(req, { params }) {
     
     // Construct the wallet init code.
     const FrameWalletFactoryInterface = ethers.Interface.from(contracts.FrameWalletFactory.abi);
-    const initCode = FrameWalletFactoryInterface.encodeFunctionData(
+    const initCodeCallData = FrameWalletFactoryInterface.encodeFunctionData(
       'createAccount', [validationMessage.data.fid, ethers.hexlify(validationMessage.signer), walletSalt]);
+    const initCode = ethers.concat([contracts.FrameWalletFactory.address, initCodeCallData]);
    
     // Assemble the fields into an eth_sendUserOperation call.
     const partialUserOp = await promisify(inflateRaw)(compressedPartialUserOpBytes);
@@ -173,6 +174,11 @@ export async function REQUEST(req, { params }) {
       }
 
       throw error;
+    }
+
+    if (response.data.error) {
+      console.error(response.data.error);
+      throw new Error(response.data.error.message);
     }
 
     console.log(response.status);
