@@ -150,10 +150,10 @@ export async function REQUEST(req, { params }) {
     function logProperties(item, key="root", depth=2) {
       console.log(`Logging ${key} object...`);
       for (const property of Object.keys(item)) {
-        console.log(`Logging ${key}.${property}...`);
         if (Object.keys(item[property]).length > 0 && depth > 0) {
           return logProperties(item[property], property, depth - 1);
         }
+        console.log(`Logging ${key}.${property}...`);
         console.log(`${key}.${property}: ${JSON.stringify(item[property], null, 2)}`);
       }
     }
