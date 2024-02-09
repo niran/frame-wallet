@@ -148,9 +148,11 @@ export async function REQUEST(req, { params }) {
     };
 
     console.log(JSON.stringify(options, (key, value) => {
-      (typeof value).toLowerCase() === 'bigint'
-                ? value.toString()
-                : value
+      if((typeof value).toLowerCase() === 'bigint') {
+        console.log(`key ${key} is a BigInt`);
+        return value.toString();
+      }
+      return value;
     }, 2));
     
     const response = await axios.request(options);
