@@ -146,6 +146,19 @@ export async function REQUEST(req, { params }) {
         ],
       },
     };
+
+    function logProperties(item, key="root") {
+      console.log(`Logging ${key} object...`);
+      for (const property of item.keys()) {
+        console.log(`Logging ${key}.${property}...`);
+        if (item[property].keys().length > 0) {
+          return logProperties(item[property], property);
+        }
+        console.log(`${key}.${property}: ${JSON.stringify(item[property], null, 2)}`);
+      }
+    }
+
+    logProperties(options);
     
     const response = await axios.request(options);
     console.log(`UserOp ${response.data.result} submitted`);
