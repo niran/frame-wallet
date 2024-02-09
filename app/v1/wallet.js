@@ -9,7 +9,6 @@ const provider = new ethers.JsonRpcProvider(RPC_URL);
  * for the user from the chain.
  */
 export async function getWalletInfoForFrameAction(fid, pk, salt) {
-  /*
   const FactoryContract = new ethers.Contract(
     contracts.FrameWalletFactory.address,
     contracts.FrameWalletFactory.abi,
@@ -23,10 +22,6 @@ export async function getWalletInfoForFrameAction(fid, pk, salt) {
     provider
   );
   const nonce = await EntryPointContract.getNonce(address, 0);
-  */
-
-  const address = "0x0746a969b9b81CFa52086d6FeF709D3489572204";
-  const nonce = 0;
 
   return {
     address,
