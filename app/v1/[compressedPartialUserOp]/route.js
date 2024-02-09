@@ -147,18 +147,11 @@ export async function REQUEST(req, { params }) {
       },
     };
 
-    function logProperties(item, key="root", depth=2) {
-      console.log(`Logging ${key} object...`);
-      for (const property of Object.keys(item)) {
-        if (Object.keys(item[property]).length > 0 && depth > 0) {
-          return logProperties(item[property], property, depth - 1);
-        }
-        console.log(`Logging ${key}.${property}...`);
-        console.log(`${key}.${property}: ${JSON.stringify(item[property], null, 2)}`);
-      }
-    }
-
-    logProperties(options);
+    console.log(JSON.stringify(options, (key, value) => {
+      (typeof value).toLowerCase() === 'bigint'
+                ? value.toString()
+                : value
+    }, 2));
     
     const response = await axios.request(options);
     console.log(`UserOp ${response.data.result} submitted`);
