@@ -71,16 +71,37 @@ export async function REQUEST(req, { params }) {
     });
   }
   const validationMessage = result.value.message;
+  const messageData = validationMessage.data;
 
   const walletInfo = await getWalletInfoForFrameAction(
     validationMessage.data.fid, validationMessage.signer, walletSalt);
 
   if (validationMessage.data.frameActionBody.buttonIndex === 1) {
-    // Construct the signature field of the userOp.
+    const abiCoder = ethers.AbiCoder.defaultAbiCoder();
+
+    // Construct the Solidity ABI-encoded version of MessageData within
+    // the FrameUserOpSignature struct. Using hub-nodejs to encode MessageData
+    // for us doesn't do what we want: it produces an encoded protobuf, but we
+    // need Solidity ABI-encoded data.
+    const frameActionBody = messageData.frameActionBody;
+    const castId = frameActionBody.castId;
+    const castIdType = 'tuple(uint64,bytes)';
+    const frameActionBodyType = `tuple(bytes,uint32,${castIdType})`;
+    const messageDataType = `tuple(uint8,uint64,uint32,uint8,${frameActionBodyType})`;
+    const frameSigType = `tuple(${messageDataType},bytes,bytes)`;
+    
     const compressedPartialUserOpBytes = Buffer.from(params.compressedPartialUserOp, 'hex');
-    const mdBytes = MessageData.encode(validationMessage.data).finish();
     const ed25519SigBytes = validationMessage.signature;
-    const signature = ethers.concat([mdBytes, ed25519SigBytes, compressedPartialUserOpBytes]);
+
+    const encodedFrameSig = abiCoder.encode([frameSigType], [[
+      [messageData.type, messageData.fid, messageData.timestamp, messageData.network, [
+        frameActionBody.url, frameActionBody.buttonIndex, [
+          castId.fid, castId.hash
+        ]
+      ]],
+      ed25519SigBytes,
+      compressedPartialUserOpBytes,
+    ]]);
     
     // Construct the wallet init code.
     const FrameWalletFactoryInterface = ethers.Interface.from(contracts.FrameWalletFactory.abi);
@@ -88,13 +109,13 @@ export async function REQUEST(req, { params }) {
       'createAccount', [validationMessage.data.fid, ethers.hexlify(validationMessage.signer), walletSalt]);
    
     // Assemble the fields into an eth_sendUserOperation call.
-    const abiCoder = ethers.AbiCoder.defaultAbiCoder();
     const partialUserOp = await promisify(inflateRaw)(compressedPartialUserOpBytes);
-    const userOpComponents = abiCoder.decode(
+    const decodeResult = abiCoder.decode(
       // [CHAIN_ID, callData, callGasLimit, verificationGasLimit, preVerificationGas, feeData.maxFeePerGas, feeData.maxPriorityFeePerGas]
-      ['uint256', 'bytes', 'uint256', 'uint256', 'uint256', 'uint256', 'uint256'],
+      ['tuple(uint256, bytes, uint256, uint256, uint256, uint256, uint256)'],
       partialUserOp
     );
+    const userOpComponents = decodeResult[0];
 
     const options = {
       method: "POST",
@@ -119,12 +140,14 @@ export async function REQUEST(req, { params }) {
             maxFeePerGas: ethers.toBeHex(userOpComponents[5]),
             maxPriorityFeePerGas: ethers.toBeHex(userOpComponents[6]),
             paymasterAndData: "0x",
-            signature: signature,
+            signature: encodedFrameSig,
           },
           ENTRY_POINT_ADDRESS,
         ],
       },
-    }; 
+    };
+
+    console.log(JSON.stringify(options, null, 2));
     
     const response = await axios.request(options);
     console.log(`UserOp ${response.data.result} submitted`);
