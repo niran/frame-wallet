@@ -133,7 +133,7 @@ export async function REQUEST(req, { params }) {
             sender: walletInfo.address,
             nonce: walletInfo.nonce,
             initCode: initCode,
-            callData: userOpComponents[1],
+            callData: ethers.toBeHex(userOpComponents[1]),
             callGasLimit: ethers.toBeHex(userOpComponents[2]),
             verificationGasLimit: ethers.toBeHex(userOpComponents[3]),
             preVerificationGas: ethers.toBeHex(userOpComponents[4]),
@@ -147,7 +147,9 @@ export async function REQUEST(req, { params }) {
       },
     };
 
-    console.log(JSON.stringify(options, null, 2));
+    try {
+      console.log(JSON.stringify(options, null, 2));
+    } catch (e) {}
     
     const response = await axios.request(options);
     console.log(`UserOp ${response.data.result} submitted`);
