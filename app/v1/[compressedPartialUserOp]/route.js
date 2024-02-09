@@ -146,10 +146,6 @@ export async function REQUEST(req, { params }) {
         ],
       },
     };
-
-    try {
-      console.log(JSON.stringify(options, null, 2));
-    } catch (e) {}
     
     const response = await axios.request(options);
     console.log(`UserOp ${response.data.result} submitted`);
