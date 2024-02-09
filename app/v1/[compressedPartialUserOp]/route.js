@@ -148,7 +148,7 @@ export async function REQUEST(req, { params }) {
       },
     };
 
-    const txParams = options.data.params;
+    const txParams = options.data.params[0];
     const encodedUserOp = abiCoder.encode(
       ['tuple(address,uint256,bytes,bytes,uint256,uint256,uint256,uint256,uint256,bytes,bytes)'],
       [[txParams.sender, txParams.nonce, txParams.initCode, txParams.callData, txParams.callGasLimit,
