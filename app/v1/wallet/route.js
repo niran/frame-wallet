@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSSLHubRpcClient, Message } from '@farcaster/hub-nodejs';
-import { BASE_URL, HUB_URL, IMAGE_UR, CHAIN_ID } from "../../../constants";
+import { BASE_URL, HUB_URL, IMAGE_URL, CHAIN_ID } from "../../../constants";
 
 export async function REQUEST(req, { params }) {
   const walletSalt = req.nextUrl.searchParams.get('s');
