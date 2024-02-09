@@ -14,7 +14,8 @@ export async function getWalletInfoForFrameAction(fid, pk, salt) {
     contracts.FrameWalletFactory.abi,
     provider
   );
-  const address = await FactoryContract.getAddress(fid, pk, salt ? parseInt(salt) : 0);
+  const getAddress = FactoryContract.getFunction("getAddress"); // collides with Contract.getAddress
+  const address = await getAddress(fid, pk, salt ? parseInt(salt) : 0);
   
   const EntryPointContract = new ethers.Contract(
     contracts.EntryPoint.address,
