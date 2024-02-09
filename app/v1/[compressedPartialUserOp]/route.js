@@ -131,7 +131,7 @@ export async function REQUEST(req, { params }) {
         params: [
           {
             sender: walletInfo.address,
-            nonce: walletInfo.nonce,
+            nonce: ethers.toBeHex(walletInfo.nonce),
             initCode: initCode,
             callData: ethers.toBeHex(userOpComponents[1]),
             callGasLimit: ethers.toBeHex(userOpComponents[2]),
