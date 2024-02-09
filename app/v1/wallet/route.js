@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSSLHubRpcClient, Message } from '@farcaster/hub-nodejs';
-import { BASE_URL, HUB_URL, IMAGE_URL } from "../../../constants";
+import { BASE_URL, HUB_URL, IMAGE_UR, CHAIN_ID } from "../../../constants";
 
 export async function REQUEST(req, { params }) {
   const walletSalt = req.nextUrl.searchParams.get('s');
@@ -53,12 +53,15 @@ export async function REQUEST(req, { params }) {
   const validationMessage = result.value.message;
 
   const walletInfo = await getWalletInfoForPublicKey(validationMessage.signer);
-
+  let explorerUrl = `https://basescan.org/address/${walletInfo.address}#internaltx`;
+  if (CHAIN_ID === 84532) {
+    explorerUrl = `https://base-sepolia.blockscout.com/address/${walletInfo.address}?tab=internal_txns`;
+  }
 
   return new NextResponse(null, {
     status: 302,
     headers: {
-      'Location': `https://basescan.org/address/${walletInfo.address}#internaltx`,
+      'Location': explorerUrl,
     },
   });
 }
