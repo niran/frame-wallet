@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 import { getSSLHubRpcClient, Message, MessageData } from '@farcaster/hub-nodejs';
 import { ethers } from "ethers";
 import axios from "axios";
-import { BASE_URL, HUB_URL, RPC_URL, IMAGE_URL, ENTRY_POINT_ADDRESS } from "../../../constants";
+import { BASE_URL, HUB_URL, IMAGE_URL, ENTRY_POINT_ADDRESS, PIMLICO_RPC_URL } from "../../../constants";
 import * as contracts from "../../../contracts";
 import { getWalletInfoForFrameAction } from "../wallet";
 import { redirectToViewWallet } from "../responses";
@@ -119,7 +119,7 @@ export async function REQUEST(req, { params }) {
 
     const options = {
       method: "POST",
-      url: RPC_URL,
+      url: PIMLICO_RPC_URL,
       headers: {
         accept: "application/json",
         "content-type": "application/json",
