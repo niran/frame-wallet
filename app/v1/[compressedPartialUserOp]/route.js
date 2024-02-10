@@ -104,11 +104,16 @@ export async function REQUEST(req, { params }) {
     ]]);
     
     // Construct the wallet init code.
-    const FrameWalletFactoryInterface = ethers.Interface.from(contracts.FrameWalletFactory.abi);
-    const initCodeCallData = FrameWalletFactoryInterface.encodeFunctionData(
-      'createAccount', [validationMessage.data.fid, ethers.hexlify(validationMessage.signer), walletSalt]);
-    const initCode = ethers.concat([contracts.FrameWalletFactory.address, initCodeCallData]);
-   
+    let initCode = '0x';
+    if (!walletInfo.code || walletInfo.code !== '0x') {
+      // The initCode MUST only be populated when the sender account has not been
+      // deployed.
+      const FrameWalletFactoryInterface = ethers.Interface.from(contracts.FrameWalletFactory.abi);
+      const initCodeCallData = FrameWalletFactoryInterface.encodeFunctionData(
+        'createAccount', [validationMessage.data.fid, ethers.hexlify(validationMessage.signer), walletSalt]);
+      initCode = ethers.concat([contracts.FrameWalletFactory.address, initCodeCallData]);
+    }
+
     // Assemble the fields into an eth_sendUserOperation call.
     const partialUserOp = await promisify(inflateRaw)(compressedPartialUserOpBytes);
     const decodeResult = abiCoder.decode(
@@ -203,6 +208,7 @@ export async function REQUEST(req, { params }) {
           <meta property="fc:frame" content="vNext" />
           <meta property="fc:frame:image" content="${BASE_URL}${IMAGE_URL}" />
           <meta property="fc:frame:button:1" content="View My Frame Wallet" />
+          <meta property="fc:frame:button:1:action" content="post_redirect" />
           <meta property="fc:frame:post_url" content="${BASE_URL}/v1/wallet${walletSalt ? ('?s=' + walletSalt) : ''}" />
         </head>
         <body>
