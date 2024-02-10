@@ -1,5 +1,7 @@
 {
-  "image": "mcr.microsoft.com/devcontainers/universal:2",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
   "hostRequirements": {
     "cpus": 4
   },
@@ -13,6 +15,14 @@
     "codespaces": {
       "openFiles": [
         "pages/index.js"
+      ]
+    },
+    "vscode": {
+      "extensions": [
+        "ms-azuretools.vscode-docker",
+        "JuanBlanco.solidity",
+        "dbaeumer.vscode-eslint",
+        "ms-python.python"
       ]
     }
   },
