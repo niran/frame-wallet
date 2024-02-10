@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { getSSLHubRpcClient, Message } from '@farcaster/hub-nodejs';
-import { BASE_URL, HUB_URL, IMAGE_URL, CHAIN_ID } from "../../../constants";
+import { BASE_URL, HUB_URL, IMAGE_URL } from "../../../constants";
+import { getWalletInfoForFrameAction } from "../wallet";
+import { redirectToViewWallet } from "../responses";
+
 
 export async function REQUEST(req, { params }) {
   const walletSalt = req.nextUrl.searchParams.get('s');
@@ -52,18 +55,8 @@ export async function REQUEST(req, { params }) {
   }
   const validationMessage = result.value.message;
 
-  const walletInfo = await getWalletInfoForPublicKey(validationMessage.signer);
-  let explorerUrl = `https://basescan.org/address/${walletInfo.address}#internaltx`;
-  if (CHAIN_ID === 84532) {
-    explorerUrl = `https://base-sepolia.blockscout.com/address/${walletInfo.address}?tab=internal_txns`;
-  }
-
-  return new NextResponse(null, {
-    status: 302,
-    headers: {
-      'Location': explorerUrl,
-    },
-  });
+  const walletInfo = await getWalletInfoForFrameAction(validationMessage.signer);
+  return redirectToViewWallet(walletInfo.address);
 }
 
 export const GET = REQUEST;
