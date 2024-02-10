@@ -3,9 +3,9 @@ import { CHAIN_ID } from "../../constants";
 
 
 export async function redirectToViewWallet(walletAddress) {
-  let explorerUrl = `https://basescan.org/address/${walletInfo.address}#internaltx`;
+  let explorerUrl = `https://basescan.org/address/${walletAddress}#internaltx`;
   if (CHAIN_ID === 84532) {
-    explorerUrl = `https://base-sepolia.blockscout.com/address/${walletInfo.address}?tab=internal_txns`;
+    explorerUrl = `https://base-sepolia.blockscout.com/address/${walletAddress}?tab=internal_txns`;
   }
 
   return new NextResponse(null, {
