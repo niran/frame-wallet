@@ -105,7 +105,7 @@ export async function REQUEST(req, { params }) {
     
     // Construct the wallet init code.
     let initCode = '0x';
-    if (!walletInfo.code || walletInfo.code !== '0x') {
+    if (!walletInfo.code || walletInfo.code === '0x') {
       // The initCode MUST only be populated when the sender account has not been
       // deployed.
       const FrameWalletFactoryInterface = ethers.Interface.from(contracts.FrameWalletFactory.abi);
