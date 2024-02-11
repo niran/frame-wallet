@@ -1,6 +1,14 @@
-import { ethers } from "ethers";
+import { AddressLike, Addressable, BigNumberish, Wallet, ethers } from "ethers";
 import { RPC_URL } from "@/constants";
 import * as contracts from "@/contracts";
+
+
+export type WalletInfo = {
+  address: AddressLike,
+  nonce: BigNumberish,
+  code: string,
+  salt: number,
+};
 
 const provider = new ethers.JsonRpcProvider(RPC_URL);
 
@@ -8,14 +16,16 @@ const provider = new ethers.JsonRpcProvider(RPC_URL);
  * Use the public key from the frame signature packet to get the address and nonce
  * for the user from the chain.
  */
-export async function getWalletInfoForFrameAction(fid, pk, salt) {
+export async function getWalletInfoForFrameAction(fid, pk, salt): Promise<WalletInfo> {
+  salt = salt ? parseInt(salt) : 0;
+
   const FactoryContract = new ethers.Contract(
     contracts.FrameWalletFactory.address,
     contracts.FrameWalletFactory.abi,
     provider
   );
   const getAddress = FactoryContract.getFunction("getAddress"); // collides with Contract.getAddress
-  const address = await getAddress(fid, pk, salt ? parseInt(salt) : 0);
+  const address = await getAddress(fid, pk, salt);
 
   const code = await provider.getCode(address);
   
@@ -30,5 +40,6 @@ export async function getWalletInfoForFrameAction(fid, pk, salt) {
     address,
     nonce,
     code,
+    salt,
   };
 }
