@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSSLHubRpcClient, Message } from '@farcaster/hub-nodejs';
-import { BASE_URL, HUB_URL, IMAGE_URL } from "../../../constants";
+import { BASE_URL, HUB_URL, IMAGE_URL } from "@/constants";
 import { getWalletInfoForFrameAction } from "../wallet";
 import { redirectToViewWallet } from "../responses";
 

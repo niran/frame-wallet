@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { BASE_URL } from '../../../constants';
+import { BASE_URL } from '@/constants';
 
 
 export async function POST(req, { params }) {

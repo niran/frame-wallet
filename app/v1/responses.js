@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { CHAIN_ID } from "../../constants";
+import { CHAIN_ID } from "@/constants";
 
 
 export async function redirectToViewWallet(walletAddress) {

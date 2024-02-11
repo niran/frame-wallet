@@ -2,7 +2,7 @@ import { promisify } from "util";
 import { deflateRaw, inflateRaw } from "zlib";
 import { NextResponse } from "next/server";
 import { ethers } from "ethers";
-import { BASE_URL, CHAIN_ID, RPC_URL, IMAGE_URL } from "../../../constants";
+import { BASE_URL, CHAIN_ID, RPC_URL, IMAGE_URL } from "@/constants";
 
 const provider = new ethers.JsonRpcProvider(RPC_URL);
 

@@ -1,3 +1,4 @@
+import path from 'path'
 import { configDefaults, defineConfig } from 'vitest/config'
 import react from '@vitejs/plugin-react'
  
@@ -6,5 +7,10 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     exclude: [...configDefaults.exclude, 'contracts/**'],
+  },
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname),
+    },
   },
 })

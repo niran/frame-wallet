@@ -1,6 +1,6 @@
 import { ethers } from "ethers";
-import { RPC_URL } from "../../constants";
-import * as contracts from "../../contracts";
+import { RPC_URL } from "@/constants";
+import * as contracts from "@/contracts";
 
 const provider = new ethers.JsonRpcProvider(RPC_URL);
 

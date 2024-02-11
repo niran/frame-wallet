@@ -5,7 +5,7 @@ import { getSSLHubRpcClient, Message, MessageData } from '@farcaster/hub-nodejs'
 import { ethers } from "ethers";
 import axios from "axios";
 import { BASE_URL, HUB_URL, IMAGE_URL, ENTRY_POINT_ADDRESS, PIMLICO_RPC_URL } from "../../../constants";
-import * as contracts from "../../../contracts";
+import * as contracts from "@/contracts";
 import { getWalletInfoForFrameAction } from "../wallet";
 import { redirectToViewWallet } from "../responses";
 
@@ -71,7 +71,6 @@ export async function REQUEST(req, { params }) {
     });
   }
   const validationMessage = result.value.message;
-  const messageData = validationMessage.data;
 
   const walletInfo = await getWalletInfoForFrameAction(
     validationMessage.data.fid, validationMessage.signer, walletSalt);
@@ -83,6 +82,7 @@ export async function REQUEST(req, { params }) {
     // the FrameUserOpSignature struct. Using hub-nodejs to encode MessageData
     // for us doesn't do what we want: it produces an encoded protobuf, but we
     // need Solidity ABI-encoded data.
+    const messageData = validationMessage.data;
     const frameActionBody = messageData.frameActionBody;
     const castId = frameActionBody.castId;
     const castIdType = 'tuple(uint64,bytes)';
