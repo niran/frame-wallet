@@ -1,5 +1,3 @@
-import { ImageResponse } from 'next/og';
-import { NextResponse, type NextRequest } from 'next/server';
 import { RouteParams } from '../types';
 import { decompress } from '../userop';
 import { BytesLike, TransactionDescription, ethers } from 'ethers';
@@ -105,7 +103,7 @@ async function decode(callData: BytesLike): Promise<ParsedTransaction> {
   };
 }
 
-export default async function GET({ params }: { params: RouteParams }) {
+export default async function handler({ params }: { params: RouteParams }) {
   const frameUserOp = await decompress(params.compressedPartialUserOp);
   const txInfo = await decode(frameUserOp.callData);
   const argRows = txInfo.args.map(({ type, value }, i) => {
