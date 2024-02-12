@@ -5,7 +5,7 @@ import { getWalletInfoForFrameAction } from "../wallet";
 import { redirectToViewWallet } from "../responses";
 
 
-export async function REQUEST(req, { params }) {
+async function handler(req, { params }) {
   const walletSalt = req.nextUrl.searchParams.get('s');
 
   const client = getSSLHubRpcClient(HUB_URL);
@@ -59,5 +59,5 @@ export async function REQUEST(req, { params }) {
   return redirectToViewWallet(walletInfo.address);
 }
 
-export const GET = REQUEST;
-export const POST = REQUEST;
+export const GET = handler;
+export const POST = handler;
