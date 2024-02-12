@@ -79,12 +79,10 @@ function validateFrameAction(req: NextRequest, params: RouteParams): ResultAsync
 
   return parsedBody
     .andThen(packet => {
-      if (!packet || !packet.trustedData) {
+      if (!packet?.trustedData?.messageBytes) {
         return errAsync(intoMissingInfoFrameValidationError("Frame Signature Packet is missing or has no trustedData"));
       }
-      return okAsync(packet);
-    })
-    .andThen(packet => {
+
       // TODO: Check the URL in the frame signature packet. If it doesn't match the current URL, then a developer
       // has included our frame in their own frame flow. Present a button that says "Prepare Transaction" that when
       // clicked, sends a Farcaster message to the user with this URL.
@@ -100,11 +98,12 @@ function validateFrameAction(req: NextRequest, params: RouteParams): ResultAsync
       if (!response.isOk()) {
         return errAsync(intoHubFrameValidationError(`HubError: ${response.error.message}`, response.error));
       }
-      if (!response.value.valid) {
+
+      const validationMessage = response.value?.message;
+      if (!response.value.valid || !validationMessage?.data) {
         return errAsync(intoHubFrameValidationError("Frame message was invalid"));
       }
 
-      const validationMessage = response.value.message;
       const walletInfoPromise = getWalletInfoForFrameAction(
         validationMessage.data.fid, validationMessage.signer, walletSalt);
       const walletResult = ResultAsync.fromPromise(walletInfoPromise,
@@ -177,16 +176,23 @@ async function handler(req: NextRequest, { params }: { params: RouteParams }) {
   }
 
   const { message, wallet } = validationResult.value;
-  if (message.data.frameActionBody.buttonIndex === 1) {
-    const abiCoder = ethers.AbiCoder.defaultAbiCoder();
+  const messageData = message.data;
+  const frameActionBody = messageData?.frameActionBody;
+  const castId = frameActionBody?.castId;
+  if (!messageData || !frameActionBody || !castId) {
+    return new NextResponse("Valid frame action is missing its data", {
+      status: 500,
+      headers: {
+        'Content-Type': 'text/html',
+      },
+    });
+  }
 
+  if (frameActionBody.buttonIndex === 1) {
     // Construct the Solidity ABI-encoded version of MessageData within
     // the FrameUserOpSignature struct. Using hub-nodejs to encode MessageData
     // for us doesn't do what we want: it produces an encoded protobuf, but we
     // need Solidity ABI-encoded data.
-    const messageData = message.data;
-    const frameActionBody = messageData.frameActionBody;
-    const castId = frameActionBody.castId;
     const castIdType = 'tuple(uint64,bytes)';
     const frameActionBodyType = `tuple(bytes,uint32,${castIdType})`;
     const messageDataType = `tuple(uint8,uint64,uint32,uint8,${frameActionBodyType})`;
@@ -195,6 +201,7 @@ async function handler(req: NextRequest, { params }: { params: RouteParams }) {
     const compressedPartialUserOpBytes = Buffer.from(params.compressedPartialUserOp, 'hex');
     const ed25519SigBytes = message.signature;
 
+    const abiCoder = ethers.AbiCoder.defaultAbiCoder();
     const encodedFrameSig = abiCoder.encode([frameSigType], [[
       [messageData.type, messageData.fid, messageData.timestamp, messageData.network, [
         frameActionBody.url, frameActionBody.buttonIndex, [
@@ -212,7 +219,7 @@ async function handler(req: NextRequest, { params }: { params: RouteParams }) {
       // deployed.
       const FrameWalletFactoryInterface = ethers.Interface.from(contracts.FrameWalletFactory.abi);
       const initCodeCallData = FrameWalletFactoryInterface.encodeFunctionData(
-        'createAccount', [message.data.fid, ethers.hexlify(message.signer), wallet.salt]);
+        'createAccount', [messageData.fid, ethers.hexlify(message.signer), wallet.salt]);
       initCode = ethers.concat([contracts.FrameWalletFactory.address, initCodeCallData]);
     }
 
@@ -328,7 +335,7 @@ async function handler(req: NextRequest, { params }: { params: RouteParams }) {
         'Content-Type': 'text/html',
       },
     });
-  } else if (message.data.frameActionBody.buttonIndex === 2) {
+  } else if (frameActionBody.buttonIndex === 2) {
     return redirectToViewWallet(wallet.address);
   } else {
     return new NextResponse('Unexpected frame button index', {
