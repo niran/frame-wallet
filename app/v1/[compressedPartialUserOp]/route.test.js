@@ -1,5 +1,5 @@
 import { expect, test, vi } from 'vitest'
-import { handler } from "./route";
+import { POST } from "./route";
 
 const payloads = {
   signTransaction: {
@@ -26,5 +26,5 @@ test('send transaction', async () => {
     }),
   };
   
-  console.log(await handler(req, { params: payloads.signTransaction.params }));
+  console.log(await POST(req, { params: payloads.signTransaction.params }));
 });

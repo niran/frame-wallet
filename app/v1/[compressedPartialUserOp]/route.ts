@@ -154,7 +154,7 @@ function respondWithInitialFrame(req, params: RouteParams) {
   });
 }
 
-export async function handler(req: NextRequest, { params }: { params: RouteParams }) {
+async function handler(req: NextRequest, { params }: { params: RouteParams }) {
   const validationResult = await validateFrameAction(req, params);
   if (validationResult.isErr()) {
     const error = validationResult.error;
@@ -212,7 +212,7 @@ export async function handler(req: NextRequest, { params }: { params: RouteParam
       // deployed.
       const FrameWalletFactoryInterface = ethers.Interface.from(contracts.FrameWalletFactory.abi);
       const initCodeCallData = FrameWalletFactoryInterface.encodeFunctionData(
-        'createAccount', [message.data.fid, ethers.hexlify(message.signer), walletSalt]);
+        'createAccount', [message.data.fid, ethers.hexlify(message.signer), wallet.salt]);
       initCode = ethers.concat([contracts.FrameWalletFactory.address, initCodeCallData]);
     }
 
@@ -313,7 +313,7 @@ export async function handler(req: NextRequest, { params }: { params: RouteParam
           <meta property="fc:frame:image" content="${BASE_URL}${IMAGE_URL}" />
           <meta property="fc:frame:button:1" content="View My Frame Wallet" />
           <meta property="fc:frame:button:1:action" content="post_redirect" />
-          <meta property="fc:frame:post_url" content="${BASE_URL}/v1/wallet${walletSalt ? ('?s=' + walletSalt) : ''}" />
+          <meta property="fc:frame:post_url" content="${BASE_URL}/v1/wallet${wallet.salt ? ('?s=' + wallet.salt) : ''}" />
         </head>
         <body>
           <img src="${IMAGE_URL}" width="800" />
