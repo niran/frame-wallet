@@ -1,18 +1,14 @@
-import { promisify } from "util";
-import { inflateRaw } from "zlib";
 import { type NextRequest, NextResponse } from "next/server";
-import { getSSLHubRpcClient, HubError, Message, MessageData, messageTypeFromJSON } from '@farcaster/hub-nodejs';
+import { getSSLHubRpcClient, Message } from '@farcaster/hub-nodejs';
 import { ethers } from "ethers";
 import axios from "axios";
-import { Result, ResultAsync, errAsync, ok, okAsync } from "neverthrow";
+import { ResultAsync, errAsync } from "neverthrow";
 import { BASE_URL, HUB_URL, IMAGE_URL, ENTRY_POINT_ADDRESS, PIMLICO_RPC_URL } from "@/constants";
 import * as contracts from "@/contracts";
 import { getWalletInfoForFrameAction, type WalletInfo } from "../wallet";
 import { redirectToViewWallet } from "../responses";
-
-type RouteParams = {
-  compressedPartialUserOp: string,
-};
+import { decompress } from "./userop";
+import { RouteParams } from "./types";
 
 type FrameSignaturePacket = {
   trustedData?: {
@@ -224,26 +220,14 @@ async function handler(req: NextRequest, { params }: { params: RouteParams }) {
     }
 
     // Assemble the fields into an eth_sendUserOperation call.
-    const partialUserOp = await promisify(inflateRaw)(compressedPartialUserOpBytes);
-    const decodeResult = abiCoder.decode(
-      // [CHAIN_ID, callData, callGasLimit, verificationGasLimit, preVerificationGas, feeData.maxFeePerGas, feeData.maxPriorityFeePerGas]
-      ['tuple(uint256, bytes, uint256, uint256, uint256, uint256, uint256)'],
-      partialUserOp
-    );
-    const userOpComponents = decodeResult[0];
-
+    const frameUserOp = await decompress(params.compressedPartialUserOp);
     const userOperation = {
       sender: wallet.address,
       nonce: ethers.toBeHex(wallet.nonce),
       initCode: initCode,
-      callData: ethers.toBeHex(userOpComponents[1]),
-      callGasLimit: ethers.toBeHex(userOpComponents[2]),
-      verificationGasLimit: ethers.toBeHex(userOpComponents[3]),
-      preVerificationGas: ethers.toBeHex(userOpComponents[4]),
-      maxFeePerGas: ethers.toBeHex(userOpComponents[5]),
-      maxPriorityFeePerGas: ethers.toBeHex(userOpComponents[6]),
       paymasterAndData: "0x",
       signature: encodedFrameSig,
+      ...frameUserOp
     };
 
     const options = {
