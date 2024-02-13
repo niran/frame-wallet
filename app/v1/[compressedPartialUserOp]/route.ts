@@ -123,7 +123,7 @@ function respondWithInitialFrame(req, params: RouteParams) {
       <meta property="og:title" content="Frame Wallet Transaction" />
       <meta property="og:image" content="${IMAGE_URL}" />
       <meta property="fc:frame" content="vNext" />
-      <meta property="fc:frame:image" content="${BASE_URL}${IMAGE_URL}" />
+      <meta property="fc:frame:image" content="${BASE_URL}/v1/${params.compressedPartialUserOp}/i" />
       <meta property="fc:frame:button:1" content="Sign Transaction" />
       <meta property="fc:frame:button:2" content="View My Frame Wallet" />
       <meta property="fc:frame:button:2:action" content="post_redirect" />
