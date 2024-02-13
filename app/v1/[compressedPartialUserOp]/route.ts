@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { getSSLHubRpcClient, Message } from '@farcaster/hub-nodejs';
-import { ethers } from "ethers";
+import { BigNumberish, ethers } from "ethers";
 import axios from "axios";
 import { ResultAsync, errAsync } from "neverthrow";
 import { BASE_URL, HUB_URL, IMAGE_URL, ENTRY_POINT_ADDRESS, PIMLICO_RPC_URL } from "@/constants";
@@ -227,7 +227,12 @@ async function handler(req: NextRequest, { params }: { params: RouteParams }) {
       initCode: initCode,
       paymasterAndData: "0x",
       signature: encodedFrameSig,
-      ...frameUserOp
+      callData: ethers.hexlify(frameUserOp.callData),
+      callGasLimit: ethers.toBeHex(frameUserOp.callGasLimit as BigNumberish),
+      verificationGasLimit: ethers.toBeHex(frameUserOp.verificationGasLimit as BigNumberish),
+      preVerificationGas: ethers.toBeHex(frameUserOp.preVerificationGas as BigNumberish),
+      maxFeePerGas: ethers.toBeHex(frameUserOp.maxFeePerGas as BigNumberish),
+      maxPriorityFeePerGas: ethers.toBeHex(frameUserOp.maxPriorityFeePerGas as BigNumberish),
     };
 
     const options = {
