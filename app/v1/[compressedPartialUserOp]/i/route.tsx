@@ -9,6 +9,7 @@ import { RouteParams } from '../types';
 
 export async function GET(req: NextRequest, { params }: { params: RouteParams }) {
   const element = await htmlHandler({ params });
+  console.log("fileURLToPath(import.meta.url):", fileURLToPath(import.meta.url));
   const robotoMono400 = await fs.promises.readFile(path.join(
     fileURLToPath(import.meta.url),
     '../../../../../node_modules/@fontsource/roboto-mono/files/roboto-mono-latin-400-normal.woff'
