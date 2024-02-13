@@ -1,117 +1,12 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { getSSLHubRpcClient, Message } from '@farcaster/hub-nodejs';
 import { BigNumberish, ethers } from "ethers";
 import axios from "axios";
-import { ResultAsync, errAsync } from "neverthrow";
-import { BASE_URL, HUB_URL, IMAGE_URL, ENTRY_POINT_ADDRESS, PIMLICO_RPC_URL } from "@/constants";
+import { BASE_URL, IMAGE_URL, ENTRY_POINT_ADDRESS, PIMLICO_RPC_URL } from "@/constants";
 import * as contracts from "@/contracts";
-import { getWalletInfoForFrameAction, type WalletInfo } from "../wallet";
 import { redirectToViewWallet } from "../responses";
 import { decompress } from "./userop";
 import { RouteParams } from "./types";
-
-type FrameSignaturePacket = {
-  trustedData?: {
-    messageBytes: string,
-  },
-};
-
-type ValidatedFrameAction = {
-  message: Message,
-  wallet: WalletInfo,
-}
-
-type MissingInfoFrameValidationError = {
-  kind: 'missing',
-  message: string,
-  error?: any,
-}
-
-type HubFrameValidationError = {
-  kind: 'hub',
-  message: string,
-  error?: any,
-}
-
-type WalletFrameValidationError = {
-  kind: 'wallet',
-  message: string,
-  error: any,
-}
-
-type FrameValidationError = MissingInfoFrameValidationError | HubFrameValidationError | WalletFrameValidationError;
-
-function intoMissingInfoFrameValidationError(message: string, error?: any): MissingInfoFrameValidationError {
-  return {
-    kind: 'missing',
-    message,
-    error,
-  };
-}
-
-function intoHubFrameValidationError(message: string, error?: any): HubFrameValidationError {
-  return {
-    kind: 'hub',
-    message,
-    error,
-  };
-}
-
-function intoWalletFrameValidationError(message: string, error?: any): WalletFrameValidationError {
-  return {
-    kind: 'wallet',
-    message,
-    error,
-  };
-}
-
-function validateFrameAction(req: NextRequest, params: RouteParams): ResultAsync<ValidatedFrameAction, FrameValidationError> {
-  const saltParam = req.nextUrl.searchParams.get('s');
-  const walletSalt = saltParam ? parseInt(saltParam) : 0;
-
-  const client = getSSLHubRpcClient(HUB_URL);
-  const parsedBody: ResultAsync<FrameSignaturePacket, MissingInfoFrameValidationError> = ResultAsync.fromPromise(req.json(),
-    err => intoMissingInfoFrameValidationError("Failed to process the request body as JSON", err));
-
-  return parsedBody
-    .andThen(packet => {
-      if (!packet?.trustedData?.messageBytes) {
-        return errAsync(intoMissingInfoFrameValidationError("Frame Signature Packet is missing or has no trustedData"));
-      }
-
-      // TODO: Check the URL in the frame signature packet. If it doesn't match the current URL, then a developer
-      // has included our frame in their own frame flow. Present a button that says "Prepare Transaction" that when
-      // clicked, sends a Farcaster message to the user with this URL.
-
-      // Validate the frame signature packet.
-      console.log(packet);
-      const frameMessageBytes = packet.trustedData.messageBytes;
-      const frameMessage = Message.decode(Uint8Array.from(Buffer.from(frameMessageBytes, 'hex')));
-      return ResultAsync.fromPromise(client.validateMessage(frameMessage),
-        err => intoHubFrameValidationError("Couldn't validate message with hub", err))
-    })
-    .andThen(response => {
-      if (!response.isOk()) {
-        return errAsync(intoHubFrameValidationError(`HubError: ${response.error.message}`, response.error));
-      }
-
-      const validationMessage = response.value?.message;
-      if (!response.value.valid || !validationMessage?.data) {
-        return errAsync(intoHubFrameValidationError("Frame message was invalid"));
-      }
-
-      const walletInfoPromise = getWalletInfoForFrameAction(
-        validationMessage.data.fid, validationMessage.signer, walletSalt);
-      const walletResult = ResultAsync.fromPromise(walletInfoPromise,
-        err => intoWalletFrameValidationError("Couldn't get wallet info for the frame's user", err));
-      return walletResult.map(wallet => {
-        return {
-          message: validationMessage,
-          wallet,
-        }
-      });
-    });
-}
+import { validateFrameAction } from "../validate-frame";
 
 function respondWithInitialFrame(req, params: RouteParams) {
   const saltParam = req.nextUrl.searchParams.get('s');
