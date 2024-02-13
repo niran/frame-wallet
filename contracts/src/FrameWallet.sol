@@ -11,8 +11,8 @@ import "account-abstraction/core/Helpers.sol";
 import {IEntryPoint} from "account-abstraction/interfaces/IEntryPoint.sol";
 import {UserOperation} from "account-abstraction/interfaces/UserOperation.sol";
 import {TokenCallbackHandler} from "account-abstraction/samples/callback/TokenCallbackHandler.sol";
-import {FrameVerifier} from "frame-verifier/FrameVerifier.sol";
 import "frame-verifier/Encoder.sol";
+import {SharedVerifier} from "./SharedVerifier.sol";
 import {InflateLib} from "inflate-sol/InflateLib.sol";
 
 import {console} from "forge-std/console.sol";
@@ -20,6 +20,7 @@ import {console} from "forge-std/console.sol";
 
 contract FrameWallet is BaseAccount, TokenCallbackHandler, UUPSUpgradeable, Initializable {
     IEntryPoint private immutable _ENTRY_POINT;
+    SharedVerifier private immutable _VERIFIER;
     string public constant URL_PREFIX = "https://frame-wallet.vercel.app/v1/";
 
     // Farcaster users are identified by their unique fid.
@@ -59,8 +60,9 @@ contract FrameWallet is BaseAccount, TokenCallbackHandler, UUPSUpgradeable, Init
       uint256 maxPriorityFeePerGas;
     }
 
-    constructor(IEntryPoint anEntryPoint) {
+    constructor(IEntryPoint anEntryPoint, SharedVerifier aVerifier) {
         _ENTRY_POINT = anEntryPoint;
+        _VERIFIER = aVerifier;
         // Disable the initializer for the implementation contract.
         _disableInitializers();
     }
@@ -158,7 +160,12 @@ contract FrameWallet is BaseAccount, TokenCallbackHandler, UUPSUpgradeable, Init
         console.log("Frame URL contents match expected URL");
 
         (bytes32 r, bytes32 s) = abi.decode(frameSig.ed25519sig, (bytes32, bytes32));
-        if (FrameVerifier.verifyMessageData(signerPk, r, s, frameSig.md)) {
+        if (_VERIFIER.verifyMessageData(SharedVerifier.VerifyRequest({
+            public_key: signerPk,
+            signature_r: r,
+            signature_s: s,
+            messageData: frameSig.md
+        }))) {
             return 0; // SIG_VALIDATION_SUCCESS
         } else {
             return SIG_VALIDATION_FAILED;
