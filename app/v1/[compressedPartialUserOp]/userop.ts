@@ -3,13 +3,13 @@ import { promisify } from "util";
 import { BytesLike, ethers } from "ethers";
 
 type UnsignedFrameUserOp = {
-  chainId: BigInt,
+  chainId: bigint,
   callData: BytesLike,
-  callGasLimit: BigInt,
-  verificationGasLimit: BigInt,
-  preVerificationGas: BigInt,
-  maxFeePerGas: BigInt,
-  maxPriorityFeePerGas: BigInt,
+  callGasLimit: bigint,
+  verificationGasLimit: bigint,
+  preVerificationGas: bigint,
+  maxFeePerGas: bigint,
+  maxPriorityFeePerGas: bigint,
 };
 
 export async function decompress(compressedFrameUserOp: string): Promise<UnsignedFrameUserOp> {

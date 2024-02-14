@@ -155,6 +155,10 @@ export default async function handler({ params }: { params: RouteParams }) {
       keyValueRow('value', ethers.formatUnits(txInfo.value, 'gwei') + ' gwei', startIndex + 1),
     ];
   }
+  const totalGas = frameUserOp.preVerificationGas + frameUserOp.verificationGasLimit + frameUserOp.callGasLimit;
+  const totalFee = totalGas * frameUserOp.maxFeePerGas;
+  const totalFeeGwei = Math.round(parseFloat(ethers.formatUnits(totalFee, 'gwei')));
+  const gasRow = keyValueRow('gas', totalFeeGwei.toString() + ' gwei', argRows.length + 2);
 
   return (
     <div
@@ -226,6 +230,7 @@ export default async function handler({ params }: { params: RouteParams }) {
           }}>
             {argRows}
             {executeRows}
+            {gasRow}
           </div>
         </div>
         <div style={{
