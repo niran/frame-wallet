@@ -3,8 +3,26 @@ import * as path from 'path';
 
 // https://vercel.com/guides/loading-static-file-nextjs-api-route
 
-function getProjectRoot() {
-  return process.cwd();
+async function getProjectRoot() {
+  const metaURL = new URL(import.meta.url);
+  let lastPath = metaURL.pathname;
+  let rootPath = lastPath;
+
+  while (true) {
+    rootPath = path.join(lastPath, '..');
+    if (rootPath === lastPath) {
+      break;
+    }
+
+    const files = await fs.readdir(rootPath);
+    if (files.find(file => file === 'jsconfig.json' || file === 'tsconfig.json')) {
+      return rootPath;
+    }
+
+    lastPath = rootPath;
+  }
+
+  return rootPath;
 }
 
 export async function loadImageURIFromFile(pathFromProjectRoot: string, mimeType: string) {
@@ -13,5 +31,5 @@ export async function loadImageURIFromFile(pathFromProjectRoot: string, mimeType
 }
 
 export async function loadFile(pathFromProjectRoot: string) {
-  return await fs.readFile(path.join(getProjectRoot(), pathFromProjectRoot));
+  return await fs.readFile(path.join(await getProjectRoot(), pathFromProjectRoot));
 }
