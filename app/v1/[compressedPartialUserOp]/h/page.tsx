@@ -3,6 +3,7 @@ import { decompress } from '../userop';
 import { BytesLike, TransactionDescription, ethers } from 'ethers';
 import axios from 'axios';
 import { redDark, gray } from '@radix-ui/colors';
+import { loadImageURIFromFile } from './load-file';
 
 
 const executeSelector = {
@@ -159,6 +160,7 @@ export default async function handler({ params }: { params: RouteParams }) {
   const totalFee = totalGas * frameUserOp.maxFeePerGas;
   const totalFeeGwei = Math.round(parseFloat(ethers.formatUnits(totalFee, 'gwei')));
   const gasRow = keyValueRow('gas', totalFeeGwei.toString() + ' gwei', argRows.length + 2);
+  const baseLogoURI = await loadImageURIFromFile('public/images/Base_Wordmark_Blue.svg', 'image/svg+xml');
 
   return (
     <div
@@ -181,22 +183,29 @@ export default async function handler({ params }: { params: RouteParams }) {
         display: 'flex',
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'flex-start',
+        justifyContent: 'space-between',
       }}>
         <div style={{
-          border: '10px solid #333',
-          width: '75px',
-          height: '75px',
-          fontSize: '40px',
           display: 'flex',
-          flexDirection: 'row',
+          justifyContent: 'flex-start',
           alignItems: 'center',
-          justifyContent: 'center',
-          margin: '20px',
         }}>
-          💰
+          <div style={{
+            border: '10px solid #333',
+            width: '75px',
+            height: '75px',
+            fontSize: '40px',
+            display: 'flex',
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
+            margin: '20px',
+          }}>
+            💰
+          </div>
+          <h1>Frame Wallet</h1>
         </div>
-        <h1>Frame Wallet</h1>
+        <img src={ baseLogoURI } style={{ height: '60px' }} />
       </div>
       <div style={{
         width: '100%',
