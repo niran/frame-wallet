@@ -12,6 +12,6 @@ export async function loadImageURIFromFile(pathFromProjectRoot: string, mimeType
   return `data:${mimeType};base64,${data.toString('base64')}`;
 }
 
-export async function loadFile(pathFromProjectRoot: string, encoding?: BufferEncoding) {
-  return await fs.readFile(path.join(getProjectRoot(), pathFromProjectRoot), encoding);
+export async function loadFile(pathFromProjectRoot: string) {
+  return await fs.readFile(path.join(getProjectRoot(), pathFromProjectRoot));
 }

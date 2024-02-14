@@ -3,7 +3,7 @@ import { decompress } from '../userop';
 import { BytesLike, TransactionDescription, ethers } from 'ethers';
 import axios from 'axios';
 import { redDark, gray } from '@radix-ui/colors';
-import { loadImageURIFromFile } from './load-file';
+import { loadImageURIFromFile } from '../load-file';
 
 
 const executeSelector = {
