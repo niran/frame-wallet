@@ -184,6 +184,7 @@ export default async function handler({ params }: { params: RouteParams }) {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
+        padding: '0 10px',
       }}>
         <div style={{
           display: 'flex',
