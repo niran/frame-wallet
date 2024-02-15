@@ -92,9 +92,8 @@ contract FrameWallet is BaseAccount, TokenCallbackHandler, UUPSUpgradeable, Init
         // NOTE: Per EIP 4337, accounts MUST validate that the signature is a valid signature
         // of userOpHash, which includes the userOp, entryPoint, and chainId in the payload.
         // However, the userOp's calldata alone is too large to fit inside Farcaster's 256
-        // character limit for URLs, so we deviate from the standard to sign less data
-        // (which is insecure against replay and gas draining attacts) and to compress
-        // the data before signing it.
+        // character limit for URLs, so we approximate this behavior by verifying the same
+        // parameters within the compressed payload.
 
         // userOp has a signature field intended for implementation-specific data, so we
         // use it to pass more than just the signature. We pass a FrameUserOpSignature that
