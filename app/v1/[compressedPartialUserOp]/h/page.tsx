@@ -4,6 +4,7 @@ import { BytesLike, TransactionDescription, ethers } from 'ethers';
 import axios from 'axios';
 import { redDark, gray } from '@radix-ui/colors';
 import { loadImageURIFromFile } from '../load-file';
+import { headers } from 'next/headers';
 
 
 const executeSelector = {
@@ -160,7 +161,10 @@ export default async function handler({ params }: { params: RouteParams }) {
   const totalFee = totalGas * frameUserOp.maxFeePerGas;
   const totalFeeGwei = Math.round(parseFloat(ethers.formatUnits(totalFee, 'gwei')));
   const gasRow = keyValueRow('gas', totalFeeGwei.toString() + ' gwei', argRows.length + 2);
-  const baseLogoURI = await loadImageURIFromFile('public/images/Base_Wordmark_Blue.svg', 'image/svg+xml');
+  
+  const staticHost = headers().get('Host');
+  const staticProto = staticHost?.includes('localhost') ? 'http' : 'https';
+  const baseLogoURI = `${staticProto}://${staticHost}/images/Base_Wordmark_Blue.svg`;
 
   return (
     <div
