@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { BigNumberish, ethers } from "ethers";
 import axios from "axios";
-import { BASE_URL, IMAGE_URL, ENTRY_POINT_ADDRESS, PIMLICO_RPC_URL } from "@/constants";
+import { BASE_URL, IMAGE_URL, ENTRY_POINT_ADDRESS, PIMLICO_RPC_URL, ALCHEMY_RPC_URL } from "@/constants";
 import * as contracts from "@/contracts";
 import { redirectToViewWallet } from "../responses";
 import { decompress } from "./userop";
@@ -132,7 +132,7 @@ async function handler(req: NextRequest, { params }: { params: RouteParams }) {
 
     const options = {
       method: "POST",
-      url: PIMLICO_RPC_URL,
+      url: ALCHEMY_RPC_URL || PIMLICO_RPC_URL,
       headers: {
         accept: "application/json",
         "content-type": "application/json",
