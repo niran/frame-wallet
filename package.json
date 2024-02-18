@@ -7,7 +7,7 @@
     "test": "vitest"
   },
   "dependencies": {
-    "@farcaster/hub-nodejs": "^0.10.23",
+    "@farcaster/hub-nodejs": "^0.11.0",
     "@fontsource/roboto-mono": "^5.0.16",
     "@radix-ui/colors": "^3.0.0",
     "axios": "^1.6.7",
@@ -22,6 +22,7 @@
     "@babel/preset-env": "^7.23.9",
     "@testing-library/react": "^14.2.1",
     "@vitejs/plugin-react": "^4.2.1",
+    "happy-dom": "^13.3.8",
     "jsdom": "^24.0.0",
     "typescript": "5.3.3",
     "vitest": "^1.2.2"
