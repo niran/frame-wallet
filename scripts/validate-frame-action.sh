@@ -39,7 +39,8 @@
 # }
 echo $1 \
   | xxd -r -p \
-  | curl -X POST "https://nemes.farcaster.xyz:2281/v1/validateMessage" \
+  | curl -X POST "https://hub-api.neynar.com/v1/validateMessage" \
      -H "Content-Type: application/octet-stream" \
+     -H "api_key: $NEYNAR_API_KEY" \
      --data-binary @- \
   | jq
