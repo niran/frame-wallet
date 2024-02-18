@@ -193,7 +193,7 @@ contract FrameWallet is BaseAccount, TokenCallbackHandler, UUPSUpgradeable, Init
     }
 
     /**
-     * execute a transaction (called directly from owner, or by entryPoint)
+     * execute a transaction (called directly from entryPoint)
      * @param dest destination address to call
      * @param value the value to pass in this call
      * @param func the calldata to pass in this call
