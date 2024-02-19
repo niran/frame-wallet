@@ -67,10 +67,15 @@ async function handler(req) {
 
   const feeData = await provider.getFeeData();
   const abiCoder = ethers.AbiCoder.defaultAbiCoder();
-  // TODO: Change callGasLimit from 1000000 to a value derived from simulating the userOp.
-  const callGasLimit = 1000000;
-  const verificationGasLimit = 10000000;
-  const preVerificationGas = 25000; // See also: https://www.stackup.sh/blog/an-analysis-of-preverificationgas
+  // TODO: Change callGasLimit to a value derived from simulating the userOp.
+  const callGasLimit = 500_000;
+  // Through trial and error, verificationGasLimit fails on Pimlico at 3,000,000, but succeeds at
+  // 5,000,000.
+  const verificationGasLimit = 5_000_000;
+  // Pre-verification gas was initially estimated at 25,000 based on this blog post:
+  // https://www.stackup.sh/blog/an-analysis-of-preverificationgas
+  // Alchemy rejected that amount and gave a requirement of 39,114.
+  const preVerificationGas = 39_114;
   const partialUserOp = abiCoder.encode(
     ['tuple(uint256, bytes, uint256, uint256, uint256, uint256, uint256)'],
     [[CHAIN_ID, callData, callGasLimit, verificationGasLimit, preVerificationGas, feeData.maxFeePerGas, feeData.maxPriorityFeePerGas]]
