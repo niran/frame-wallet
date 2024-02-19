@@ -256,4 +256,26 @@ contract FrameWallet is BaseAccount, TokenCallbackHandler, UUPSUpgradeable, Init
     function _validateNonce(uint256 nonce) override internal view virtual {
         require(nonce < type(uint64).max);
     }
+
+    /**
+     * SimpleAccount Utility Functions
+     * ===============================
+     */
+    
+    
+    receive() external payable {}
+
+    /**
+     * check current account deposit in the entryPoint
+     */
+    function getDeposit() public view returns (uint256) {
+        return entryPoint().balanceOf(address(this));
+    }
+
+    /**
+     * deposit more funds for this account in the entryPoint
+     */
+    function addDeposit() public payable {
+        entryPoint().depositTo{value : msg.value}(address(this));
+    }
 }

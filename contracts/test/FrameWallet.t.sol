@@ -374,6 +374,14 @@ contract FrameWalletTest is Test {
         uint256 validationData = frameWallet.validateUserOp(userOp, 0, 0);
         assertEq(validationData, 0);
     }
+
+    function testSendETHToDeployedWallet() public {
+        uint64 unusedFid = 12345;
+        FrameWallet wallet = factory.createAccount(unusedFid, PUBLIC_KEY, 0);
+        (bool success, bytes memory result) = address(wallet).call{value: 0.001 ether}("");
+        assertEq(success, true);
+        assertEq(address(wallet).balance, 0.001 ether);
+    }
 }
 
 contract Token is ERC20("Test", "TEST") {
