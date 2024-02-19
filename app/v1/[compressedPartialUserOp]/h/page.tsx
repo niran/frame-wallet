@@ -119,11 +119,12 @@ async function decode(callData: BytesLike): Promise<ParsedMethodCall | ParsedTra
       type: 'raw',
       value: ethers.hexlify(callDataBytes.slice(4)),
     }],
+    ...(executeArgs || {})
   };
 }
 
 function keyValueRow(key: string, value: string, i: number) {
-  if (value.length > 12) {
+  if (value.length > 15) {
     value = value.slice(0, 6) + '...' + value.slice(-4);
   }
   return (
@@ -152,9 +153,10 @@ export default async function handler({ params }: { params: RouteParams }) {
   let executeRows: Array<any> = [];
   if ('to' in txInfo) {
     const startIndex = argRows.length;
+    const valueGwei = Math.round(parseFloat(ethers.formatUnits(txInfo.value, 'gwei')));
     executeRows = [
       keyValueRow('to', txInfo.to, startIndex),
-      keyValueRow('value', ethers.formatUnits(txInfo.value, 'gwei') + ' gwei', startIndex + 1),
+      keyValueRow('value', valueGwei.toString() + ' gwei', startIndex + 1),
     ];
   }
   const totalGas = frameUserOp.preVerificationGas + frameUserOp.verificationGasLimit + frameUserOp.callGasLimit;
