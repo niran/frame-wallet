@@ -20,7 +20,7 @@ import {console} from "forge-std/console.sol";
 
 contract FrameWallet is BaseAccount, TokenCallbackHandler, UUPSUpgradeable, Initializable {
     IEntryPoint private immutable _ENTRY_POINT;
-    string public constant URL_PREFIX = "https://frame-wallet.vercel.app/v1/";
+    string public constant URL_PREFIX = "https://0xfw.vercel.app/v1/";
     mapping(bytes32 => bool) public isValidUserOp;
 
     // Farcaster users are identified by their unique fid.
