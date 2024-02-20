@@ -1,4 +1,4 @@
-import { AddressLike, Addressable, BigNumberish, BytesLike, Wallet, ethers } from "ethers";
+import { AddressLike, BigNumberish, BytesLike, ethers } from "ethers";
 import { RPC_URL } from "@/constants";
 import * as contracts from "@/contracts";
 
@@ -42,4 +42,17 @@ export async function getWalletInfoForFrameAction(fid: number, pk: BytesLike, sa
     code,
     salt,
   };
+}
+
+export function getInitCode(wallet: WalletInfo, fid, signer) {
+  // The initCode MUST only be populated when the sender account has not been
+  // deployed.
+  if (wallet.code && wallet.code !== '0x') {
+    return '0x';
+  }
+    
+  const FrameWalletFactoryInterface = ethers.Interface.from(contracts.FrameWalletFactory.abi);
+  const initCodeCallData = FrameWalletFactoryInterface.encodeFunctionData(
+    'createAccount', [fid, ethers.hexlify(signer), wallet.salt]);
+  return ethers.concat([contracts.FrameWalletFactory.address, initCodeCallData]);
 }

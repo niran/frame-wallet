@@ -7,6 +7,7 @@ import { redirectToViewWallet } from "../responses";
 import { decompress } from "./userop";
 import { RouteParams } from "./types";
 import { validateFrameAction } from "../validate-frame";
+import { getInitCode } from "../wallet";
 
 function respondWithInitialFrame(req, params: RouteParams) {
   const saltParam = req.nextUrl.searchParams.get('s');
@@ -103,19 +104,9 @@ async function handler(req: NextRequest, { params }: { params: RouteParams }) {
       compressedPartialUserOpBytes,
     ]]);
     
-    // Construct the wallet init code.
-    let initCode = '0x';
-    if (!wallet.code || wallet.code === '0x') {
-      // The initCode MUST only be populated when the sender account has not been
-      // deployed.
-      const FrameWalletFactoryInterface = ethers.Interface.from(contracts.FrameWalletFactory.abi);
-      const initCodeCallData = FrameWalletFactoryInterface.encodeFunctionData(
-        'createAccount', [messageData.fid, ethers.hexlify(message.signer), wallet.salt]);
-      initCode = ethers.concat([contracts.FrameWalletFactory.address, initCodeCallData]);
-    }
-
     // Assemble the fields into an eth_sendUserOperation call.
     const frameUserOp = await decompress(params.compressedPartialUserOp);
+    const initCode = getInitCode(wallet, messageData.fid, message.signer);
     const userOperation = {
       sender: wallet.address,
       nonce: ethers.toBeHex(wallet.nonce),
@@ -132,7 +123,9 @@ async function handler(req: NextRequest, { params }: { params: RouteParams }) {
 
     const options = {
       method: "POST",
-      url: ALCHEMY_RPC_URL || PIMLICO_RPC_URL,
+      // NOTE: Only Pimlico is successfully bundling our user operations. Alchemy times out,
+      // which could be due to FrameWallet violating ERC 4337 storage constraints.
+      url: PIMLICO_RPC_URL,
       headers: {
         accept: "application/json",
         "content-type": "application/json",
@@ -147,23 +140,6 @@ async function handler(req: NextRequest, { params }: { params: RouteParams }) {
         ],
       },
     };
-
-    const encodedUserOp = abiCoder.encode(
-      ['tuple(address,uint256,bytes,bytes,uint256,uint256,uint256,uint256,uint256,bytes,bytes)'],
-      [[userOperation.sender, userOperation.nonce, userOperation.initCode, userOperation.callData,
-        userOperation.callGasLimit, userOperation.verificationGasLimit, userOperation.preVerificationGas,
-        userOperation.maxFeePerGas, userOperation.maxPriorityFeePerGas, userOperation.paymasterAndData,
-        userOperation.signature]]
-    );
-    console.log(`Encoded UserOperation: ${encodedUserOp}`);
-
-    console.log(JSON.stringify(options, (key, value) => {
-      if((typeof value).toLowerCase() === 'bigint') {
-        console.log(`key ${key} is a BigInt`);
-        return value.toString();
-      }
-      return value;
-    }, 2));
     
     let response;
     try {
