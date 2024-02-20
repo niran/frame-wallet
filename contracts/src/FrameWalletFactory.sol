@@ -7,15 +7,13 @@ import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.s
 import {IEntryPoint} from "account-abstraction/interfaces/IEntryPoint.sol";
 
 import {FrameWallet} from "./FrameWallet.sol";
-import {SharedVerifier} from "./SharedVerifier.sol";
 
 
 contract FrameWalletFactory {
     FrameWallet public immutable accountImplementation;
 
     constructor(IEntryPoint _entryPoint) {
-        SharedVerifier sharedVerifier = new SharedVerifier();
-        accountImplementation = new FrameWallet(_entryPoint, sharedVerifier);
+        accountImplementation = new FrameWallet(_entryPoint);
     }
 
     function createAccount(uint64 fid, bytes32 signerPk, uint256 salt) public returns (FrameWallet ret) {
