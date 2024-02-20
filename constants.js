@@ -7,5 +7,5 @@ export const IMAGE_URL = "/images/robot-check.png";
 export const CHAIN_ID = 84532;
 export const RPC_URL = "https://sepolia.base.org";
 export const PIMLICO_RPC_URL = "https://api.pimlico.io/v1/base-sepolia/rpc?apikey=" + (process.env.PIMLICO_API_KEY || '');
-export const ALCHEMY_RPC_URL = process.env.ALCHEMY_API_KEY ? "https://base-sepolia.g.alchemy.com/v2/" + process.env.ALCHEMY_API_KEY : null;
+export const ALCHEMY_RPC_URL = process.env.ALCHEMY_API_KEY ? "https://base-sepolia.g.alchemy.com/v2/" + process.env.ALCHEMY_API_KEY : undefined;
 
