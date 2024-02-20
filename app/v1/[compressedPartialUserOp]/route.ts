@@ -125,7 +125,7 @@ async function handler(req: NextRequest, { params }: { params: RouteParams }) {
       method: "POST",
       // NOTE: Only Pimlico is successfully bundling our user operations. Alchemy times out,
       // which could be due to FrameWallet violating ERC 4337 storage constraints.
-      url: PIMLICO_RPC_URL,
+      url: ALCHEMY_RPC_URL, // PIMLICO_RPC_URL,
       headers: {
         accept: "application/json",
         "content-type": "application/json",
