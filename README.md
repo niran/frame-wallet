@@ -25,6 +25,7 @@ If you've seen a Frame Wallet transaction on Farcaster, here's what you need to 
 ## Known Issues
 
 * Gas prices are encoded in the transaction URLs, so they don't adapt to changing network conditions. If the gas prices could change over time, anyone on the network could rebroadcast your transaction with high prices that would drain your Frame Wallet's ETH.
+* ERC 4337 wallets on layer 2 networks [have to specify a large amount for pre-verification gas](https://www.alchemy.com/blog/l2-gas-and-signature-aggregators) to pay for the layer 1 component of gas fees. This amount is always paid to the bundler and doesn't adjust when fees go down. That means if you generate a frame transaction URL when fees are high, your users will overpay even when fees go down.
 
 ## Future Directions
 
