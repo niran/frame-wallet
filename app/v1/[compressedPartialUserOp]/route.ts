@@ -120,7 +120,8 @@ async function handler(req: NextRequest, { params }: { params: RouteParams }) {
       maxFeePerGas: ethers.toBeHex(frameUserOp.maxFeePerGas as BigNumberish),
       maxPriorityFeePerGas: ethers.toBeHex(frameUserOp.maxPriorityFeePerGas as BigNumberish),
     };
-
+    console.log("UserOperation: " + JSON.stringify(userOperation, null, 2));
+    
     const options = {
       method: "POST",
       // NOTE: Only Pimlico is successfully bundling our user operations. Alchemy times out,
