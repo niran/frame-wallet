@@ -37,3 +37,22 @@ It'd be nice to be able to subsidize gas for Frame Wallet users, and Frame Walle
 Farcaster frames send a signed message to the frame server every time a button is clicked on a frame. These signatures are Ed22519 signatures that can't directly control Ethereum accounts. However, now that we have ERC 4337, any cryptographic signatures can control Ethereum accounts. Frame Wallet demonstrates that by associating Farcaster IDs and their signing keys with ERC 4337 wallets. Beyond Farcaster signatures, it's now possible to use all sorts of encryption to control wallets: DKIM signatures from emails, SSL certificates for web content, or most promisingly, passkeys controlled by fingerprint scanners on your devices.
 
 We hope Frame Wallet gets you thinking about things you can build on Base with ERC 4337!
+
+## Running Tests
+
+### Contracts
+
+The contract tests are intended to be run on the `base-sepolia` branch of the repository. The logic in the tests depends on the chain ID being set to Base Sepolia (84532), and the URL prefix for the transaction URLs to be the one we use for testing on Base Sepolia (https://0xfw**d**.vercel.app).
+
+```
+cd contracts
+forge test -vv
+```
+
+### Frame Server
+
+The current tests are integration tests that require a NEYNAR_API_KEY to be set, and HUB_URL to point to a Neynar Farcaster hub.
+
+```
+HUB_URL=<hub subdomain>.hubs.neynar.com:2283 NEYNAR_API_KEY=<api key> npm test
+```
