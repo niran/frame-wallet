@@ -4,7 +4,8 @@
     "dev": "next",
     "build": "next build",
     "start": "next start",
-    "test": "vitest"
+    "test": "vitest",
+    "generate-tx": "tsx scripts/generate-tx.ts"
   },
   "dependencies": {
     "@farcaster/hub-nodejs": "^0.11.0",
@@ -24,6 +25,7 @@
     "@vitejs/plugin-react": "^4.2.1",
     "happy-dom": "^13.3.8",
     "jsdom": "^24.0.0",
+    "tsx": "^4.7.1",
     "typescript": "5.3.3",
     "vitest": "^1.2.2"
   }

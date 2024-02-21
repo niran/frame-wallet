@@ -9,7 +9,7 @@ Frame Wallet helps you create a frame without writing any code or paying gas fee
 If you want users to send Base transactions to mint a token, mint an NFT, or take some other actions onchain, here's what you do:
 
 1. Generate the calldata for your transaction using [Foundry's `cast calldata` command](https://book.getfoundry.sh/reference/cast/cast-calldata).
-2. Generate a transaction URL by cloning this repository, running the dev server with `npm run dev`, and calling the transaction generation script with `bash scripts/generate-tx.sh <calldata>`. (We intend to replace this step with a web user interface.)
+2. Generate a transaction URL by cloning this repository and running the `generate-tx` script, which requires an ALCHEMY_API_KEY environment variable. For example, `ALCHEMY_API_KEY=<api key> npm run generate-tx <calldata>`.
 3. Test your frame in the [Frame Validator](https://warpcast.com/~/developers/frames).
 4. Cast the URL to your transaction frame!
 
