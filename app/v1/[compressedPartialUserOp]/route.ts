@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { BigNumberish, ethers } from "ethers";
 import axios from "axios";
-import { BASE_URL, IMAGE_URL, ENTRY_POINT_ADDRESS, PIMLICO_RPC_URL, ALCHEMY_RPC_URL } from "@/constants";
+import { BASE_URL, IMAGE_URL, ENTRY_POINT_ADDRESS, PIMLICO_RPC_URL, ALCHEMY_RPC_URL, ERROR_IMAGE_URL } from "@/constants";
 import * as contracts from "@/contracts";
 import { redirectToViewWallet } from "../responses";
 import { decompress } from "./userop";
@@ -121,7 +121,7 @@ async function handler(req: NextRequest, { params }: { params: RouteParams }) {
       maxPriorityFeePerGas: ethers.toBeHex(frameUserOp.maxPriorityFeePerGas as BigNumberish),
     };
     console.log("UserOperation: " + JSON.stringify(userOperation, null, 2));
-    
+
     const options = {
       method: "POST",
       // NOTE: Only Pimlico is successfully bundling our user operations. Alchemy times out,
@@ -143,6 +143,7 @@ async function handler(req: NextRequest, { params }: { params: RouteParams }) {
     };
     
     let response;
+    let success = true;
     try {
       response = await axios.request(options);
     } catch (error) {
@@ -159,36 +160,57 @@ async function handler(req: NextRequest, { params }: { params: RouteParams }) {
         console.log(error.request);
       }
 
-      throw error;
+      success = false;
     }
 
     if (response.data.error) {
       console.error(response.data.error);
-      throw new Error(response.data.error.message);
+      success = false;
     }
 
-    console.log(response.status);
-    console.log(response.headers);
-    console.log(response.data);
-    console.log(`UserOp ${response.data.result} submitted`);
+    let html: string;
+    if (success) {
+      console.log(response.status);
+      console.log(response.headers);
+      console.log(response.data);
+      console.log(`UserOp ${response.data.result} submitted`);
 
-    const html = `
-      <html>
-        <head>
-          <meta property="og:title" content="Frame Wallet Transaction Submitted" />
-          <meta property="og:image" content="${IMAGE_URL}" />
-          <meta property="fc:frame" content="vNext" />
-          <meta property="fc:frame:image" content="${BASE_URL}${IMAGE_URL}" />
-          <meta property="fc:frame:button:1" content="View My Frame Wallet" />
-          <meta property="fc:frame:button:1:action" content="post_redirect" />
-          <meta property="fc:frame:post_url" content="${BASE_URL}/v1/wallet${wallet.salt ? ('?s=' + wallet.salt) : ''}" />
-        </head>
-        <body>
-          <img src="${IMAGE_URL}" width="800" />
-          <h1>Transaction Submitted</h1>
-        </body>
-      </html>
-    `;
+      html = `
+        <html>
+          <head>
+            <meta property="og:title" content="Frame Wallet Transaction Submitted" />
+            <meta property="og:image" content="${IMAGE_URL}" />
+            <meta property="fc:frame" content="vNext" />
+            <meta property="fc:frame:image" content="${BASE_URL}${IMAGE_URL}" />
+            <meta property="fc:frame:button:1" content="View My Frame Wallet" />
+            <meta property="fc:frame:button:1:action" content="post_redirect" />
+            <meta property="fc:frame:post_url" content="${BASE_URL}/v1/wallet${wallet.salt ? ('?s=' + wallet.salt) : ''}" />
+          </head>
+          <body>
+            <img src="${IMAGE_URL}" width="800" />
+            <h1>Transaction Submitted</h1>
+          </body>
+        </html>
+      `;
+    } else {
+      html = `
+        <html>
+          <head>
+            <meta property="og:title" content="Frame Wallet Transaction Error" />
+            <meta property="og:image" content="${ERROR_IMAGE_URL}" />
+            <meta property="fc:frame" content="vNext" />
+            <meta property="fc:frame:image" content="${BASE_URL}${ERROR_IMAGE_URL}" />
+            <meta property="fc:frame:button:1" content="View My Frame Wallet" />
+            <meta property="fc:frame:button:1:action" content="post_redirect" />
+            <meta property="fc:frame:post_url" content="${BASE_URL}/v1/wallet${wallet.salt ? ('?s=' + wallet.salt) : ''}" />
+          </head>
+          <body>
+            <img src="${ERROR_IMAGE_URL}" width="800" />
+            <h1>Transaction Error</h1>
+          </body>
+        </html>
+      `;
+    }
 
     return new NextResponse(html, {
       status: 200,

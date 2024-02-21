@@ -9,7 +9,7 @@ import { validateFrameAction } from "../validate-frame";
 async function handler(req, { params }) {
   const result = await validateFrameAction(req, params);
   if (result.isOk()) {
-    return redirectToViewWallet(result.value.address);
+    return redirectToViewWallet(result.value.wallet.address);
   }
 
   // We don't have a signature from the user, so prompt them to sign.
