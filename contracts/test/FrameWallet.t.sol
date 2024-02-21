@@ -262,10 +262,10 @@ contract FrameWalletTest is Test {
     }
 
     function testHandleUserOpWithSalt() public {
+        vm.chainId(84532); // Base Sepolia
         (address addressForPublicKey, bytes memory initCode) = _prepareWallet(231775, PUBLIC_KEY, 1);
         Token token = Token(0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913); // USDC on Base
         vm.etch(address(token), type(Token).runtimeCode);
-        vm.chainId(84532); // Base Sepolia
         address spender = address(0xdeadbeef);
 
         bytes memory innerCallData = abi.encodeCall(this.approve, (
@@ -361,6 +361,103 @@ contract FrameWalletTest is Test {
         (bool success, bytes memory result) = address(wallet).call{value: 0.001 ether}("");
         assertEq(success, true);
         assertEq(address(wallet).balance, 0.001 ether);
+    }
+
+    function testWithdrawFromEntryPoint() public {
+        vm.chainId(84532); // Base Sepolia
+        (address addressForPublicKey, bytes memory initCode) = _prepareWallet(231775, PUBLIC_KEY, 0);
+        entryPoint.depositTo{value: 0.2 ether}(addressForPublicKey);
+        assertEq(entryPoint.balanceOf(addressForPublicKey), 0.2 ether);
+        
+        address payable userEOA = payable(address(0xdeadbeef));
+        bytes memory innerCallData = abi.encodeCall(entryPoint.withdrawTo, (
+            userEOA,
+            0.1 ether
+        ));
+        bytes memory callData = abi.encodeCall(this.execute, (
+            address(entryPoint),
+            0,
+            innerCallData
+        ));
+
+        /**
+        trustedData: {
+            messageBytes: '0a9802080d10df920e189dc49b2f2001820187020ae60168747470733a2f2f30786677642e76657263656c2e6170702f76312f3633363063303062313466306361333237613939653064376365663030306166326366623432666365366662373833626530393565373135333838626437373934653364306266306561653737373732323065306665323764623634643562663231306264633734383833363937376339346630373637623862623663646334333333376637663662646531393736336130306332343130393037373531383864316138633061376530646564613764656637313836343162323662343536633137663938653033303010011a1a08df920e121400000000000000000000000000000000000000011214e689cb90eb5bfac42dc8b3a2030b11a2921a3c421801224058e3f9c7d928fe523038aae9becee96ba437b38644b63ed3f1e308e91366e62c9c990ae13d73736a44afd8bbecc1a8e4f5931c6d2bad3319928594198506e2002801322031351506585341467af8e18295bbd3eea2d5ea942edaf612f915f8e9cf639419'
+        }
+
+        {
+            "valid": true,
+            "message": {
+                "data": {
+                "type": "MESSAGE_TYPE_FRAME_ACTION",
+                "fid": 231775,
+                "timestamp": 99017245,
+                "network": "FARCASTER_NETWORK_MAINNET",
+                "frameActionBody": {
+                    "url": "aHR0cHM6Ly8weGZ3ZC52ZXJjZWwuYXBwL3YxLzYzNjBjMDBiMTRmMGNhMzI3YTk5ZTBkN2NlZjAwMGFmMmNmYjQyZmNlNmZiNzgzYmUwOTVlNzE1Mzg4YmQ3Nzk0ZTNkMGJmMGVhZTc3NzcyMjBlMGZlMjdkYjY0ZDViZjIxMGJkYzc0ODgzNjk3N2M5NGYwNzY3YjhiYjZjZGM0MzMzN2Y3ZjZiZGUxOTc2M2EwMGMyNDEwOTA3NzUxODhkMWE4YzBhN2UwZGVkYTdkZWY3MTg2NDFiMjZiNDU2YzE3Zjk4ZTAzMDA=",
+                    "buttonIndex": 1,
+                    "castId": {
+                    "fid": 231775,
+                    "hash": "0x0000000000000000000000000000000000000001"
+                    },
+                    "inputText": ""
+                }
+                },
+                "hash": "0xe689cb90eb5bfac42dc8b3a2030b11a2921a3c42",
+                "hashScheme": "HASH_SCHEME_BLAKE3",
+                "signature": "WOP5x9ko/lIwOKrpvs7pa6Q3s4ZEtj7T8eMI6RNm5iycmQrhPXNzakSv2Lvswajk9ZMcbSutMxmShZQZhQbiAA==",
+                "signatureScheme": "SIGNATURE_SCHEME_ED25519",
+                "signer": "0x31351506585341467af8e18295bbd3eea2d5ea942edaf612f915f8e9cf639419"
+            }
+        }
+        */
+
+        MessageData memory md = MessageData({
+            type_: MessageType.MESSAGE_TYPE_FRAME_ACTION,
+            fid: 231775,
+            timestamp: 99017245,
+            network: FarcasterNetwork.FARCASTER_NETWORK_MAINNET,
+            frame_action_body: FrameActionBody({
+                url: "https://0xfwd.vercel.app/v1/6360c00b14f0ca327a99e0d7cef000af2cfb42fce6fb783be095e715388bd7794e3d0bf0eae7777220e0fe27db64d5bf210bdc748836977c94f0767b8bb6cdc43337f7f6bde19763a00c241090775188d1a8c0a7e0deda7def718641b26b456c17f98e0300",
+                button_index: 1,
+                cast_id: CastId({fid: 231775, hash: hex"0000000000000000000000000000000000000001"})
+            })
+        });
+
+        FrameWallet.FrameUserOpSignature memory frameSig = FrameWallet.FrameUserOpSignature({
+            md: md,
+            ed25519sig: hex"58e3f9c7d928fe523038aae9becee96ba437b38644b63ed3f1e308e91366e62c9c990ae13d73736a44afd8bbecc1a8e4f5931c6d2bad3319928594198506e200",
+            compressedPartialUserOp: hex"6360c00b14f0ca327a99e0d7cef000af2cfb42fce6fb783be095e715388bd7794e3d0bf0eae7777220e0fe27db64d5bf210bdc748836977c94f0767b8bb6cdc43337f7f6bde19763a00c241090775188d1a8c0a7e0deda7def718641b26b456c17f98e0300"
+        });
+
+        UserOperation memory userOp = UserOperation({
+            sender: addressForPublicKey,
+            nonce: 0,
+            initCode: initCode,
+            callData: callData,
+            callGasLimit: 500000,
+            verificationGasLimit: 5000000,
+            preVerificationGas: 856269,
+            maxFeePerGas: 21138592,
+            maxPriorityFeePerGas: 1000000,
+            paymasterAndData: hex"",
+            signature: abi.encode(frameSig)
+        });
+        console.log("Sender: %s", addressForPublicKey);
+        console.log("initCode:");
+        console.logBytes(initCode);
+        console.log("callData:");
+        console.logBytes(callData);
+
+        UserOperation[] memory ops = new UserOperation[](1);
+        ops[0] = userOp;
+        entryPoint.handleOps(ops, payable(address(0xbeefcafe)));
+
+        // We started with 0.2 ether deposited in the entrypoint, spent some on gas, then
+        // transferred 0.1 ether back out. The remaining balance must be strictly less than
+        // 0.1 ether.
+        assertLt(entryPoint.balanceOf(addressForPublicKey), 0.1 ether);
+        assertEq(userEOA.balance, 0.1 ether);
     }
 }
 

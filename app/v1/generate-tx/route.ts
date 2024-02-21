@@ -127,7 +127,7 @@ async function handler(req) {
   }
 
   const estimates = response.data?.result;
-  const callGasLimit = ethers.getBigInt(/*estimates?.callGasLimit ??*/ 500_000);
+  const callGasLimit = ethers.getBigInt(estimates?.callGasLimit ?? 500_000);
   // Alchemy estimated 265,368 for verification gas, which is too low. Through trial and error,
   // verificationGasLimit fails on Pimlico at 3,000,000, but succeeds at 5,000,000. We hardcode
   // that gas limit instead of using the estimate.
