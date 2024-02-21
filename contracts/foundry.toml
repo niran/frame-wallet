@@ -7,6 +7,15 @@ remappings = [
   "@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts",
 ]
 
+[profile.base]
+libraries = [
+  "lib/frame-verifier/src/libraries/Sha512.sol:Sha512:0x40dFe3e0026030ebD8d9f1D5eA82A0E0f09161a8",
+  "lib/frame-verifier/src/libraries/Ed25519_pow.sol:Ed25519_pow:0x4Ca895d26b7eb26a9D980565732049d4199f32C8",
+  "lib/frame-verifier/src/libraries/Blake3.sol:Blake3:0x256accE707a87E58759f1B6e0b833DEaEa375a80",
+  "lib/frame-verifier/src/libraries/Ed25519.sol:Ed25519:0x7741aEC48fA96DA3ad55f11E13dBae9A07dCa584",
+  "lib/frame-verifier/src/FrameVerifier.sol:FrameVerifier:0x26223093cd2cD5a06070bf2dB2d4F27dD69051Dd",
+]
+
 [profile.base-sepolia]
 libraries = [
   "lib/frame-verifier/src/libraries/Sha512.sol:Sha512:0x256accE707a87E58759f1B6e0b833DEaEa375a80",
