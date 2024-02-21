@@ -1,7 +1,7 @@
 import { ENTRY_POINT_ADDRESS } from "./constants";
 
 export const FrameWalletFactory = {
-  address: "0x1530D1fec6bE9Cbe7EF51b45539008043b636916",
+  address: "0x7C63eDCE58F416Ed0f04c7286fAa82FCbee265E0",
   abi: [{"type":"constructor","inputs":[{"name":"_entryPoint","type":"address","internalType":"contract IEntryPoint"}],"stateMutability":"nonpayable"},{"type":"function","name":"accountImplementation","inputs":[],"outputs":[{"name":"","type":"address","internalType":"contract FrameWallet"}],"stateMutability":"view"},{"type":"function","name":"createAccount","inputs":[{"name":"fid","type":"uint64","internalType":"uint64"},{"name":"signerPk","type":"bytes32","internalType":"bytes32"},{"name":"salt","type":"uint256","internalType":"uint256"}],"outputs":[{"name":"ret","type":"address","internalType":"contract FrameWallet"}],"stateMutability":"nonpayable"},{"type":"function","name":"getAddress","inputs":[{"name":"fid","type":"uint64","internalType":"uint64"},{"name":"signerPk","type":"bytes32","internalType":"bytes32"},{"name":"salt","type":"uint256","internalType":"uint256"}],"outputs":[{"name":"","type":"address","internalType":"address"}],"stateMutability":"view"}],
 };
 
